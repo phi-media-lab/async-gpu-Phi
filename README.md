@@ -632,6 +632,12 @@ Other
 - [Architecture Guide](docs/ARCHITECTURE.md) — hostcall protocol, MIR pass, runtime internals
 - [Changelog](docs/CHANGELOG.md) — version history and shipped stories
 - [Getting Started](docs/getting-started.md) — step-by-step first kernel tutorial
+- [Composed typed-priority + hostcall E2E](docs/composed-priority-hostcall-e2e.md) —
+  typed metadata、reserved credit、mutation oracle 与 cancellation/shutdown 边界
+- [Obstacle-event priority stress](docs/obstacle-event-priority-stress.md) —
+  cooperative admission/dispatch、non-yielding negative 与 watchdog decisions
+- [Priority handle safety GPU litmus](docs/priority-handle-safety-gpu-litmus.md) —
+  multi-block stale-waker generation reuse 与 typed `Cancelled→AlreadyJoined`
 
 ## Limitations
 
