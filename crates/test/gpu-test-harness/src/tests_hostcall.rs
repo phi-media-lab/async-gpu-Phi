@@ -45,8 +45,8 @@ pub(crate) fn run_hostcall_print_hello(dev: Arc<CudaDevice>) -> Result<()> {
         });
     });
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["hostcall_print_hello"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_IO_PTX);
+    dev.load_ptx(ptx, "kernel", &["hostcall_print_hello"])?;
     let f = dev
         .get_func("kernel", "hostcall_print_hello")
         .ok_or(GpuHostError::KernelNotFound("hostcall_print_hello"))?;
@@ -124,8 +124,8 @@ pub(crate) fn run_hostcall_print_multi(dev: Arc<CudaDevice>, num_blocks: u32) ->
         });
     });
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["hostcall_print_multi"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_IO_PTX);
+    dev.load_ptx(ptx, "kernel", &["hostcall_print_multi"])?;
     let f = dev
         .get_func("kernel", "hostcall_print_multi")
         .ok_or(GpuHostError::KernelNotFound("hostcall_print_multi"))?;
@@ -215,7 +215,7 @@ pub(crate) fn run_embassy_countdown(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Embassy Test 2: CountdownFuture (multi-poll) ---");
 
     let ptx = cudarc::nvrtc::Ptx::from_src(crate::EMBASSY_PTX);
-    let _ = dev.load_ptx(ptx, "embassy", &["embassy_countdown_kernel"]);
+    dev.load_ptx(ptx, "embassy", &["embassy_countdown_kernel"])?;
 
     let f = dev
         .get_func("embassy", "embassy_countdown_kernel")
@@ -256,7 +256,7 @@ pub(crate) fn run_embassy_two_task(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Embassy Test 3: Two concurrent tasks ---");
 
     let ptx = cudarc::nvrtc::Ptx::from_src(crate::EMBASSY_PTX);
-    let _ = dev.load_ptx(ptx, "embassy", &["embassy_two_task_kernel"]);
+    dev.load_ptx(ptx, "embassy", &["embassy_two_task_kernel"])?;
 
     let f = dev
         .get_func("embassy", "embassy_two_task_kernel")
@@ -297,7 +297,7 @@ pub(crate) fn run_sync_countdown(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Embassy Test 4: Sync countdown baseline ---");
 
     let ptx = cudarc::nvrtc::Ptx::from_src(crate::EMBASSY_PTX);
-    let _ = dev.load_ptx(ptx, "embassy", &["sync_countdown_kernel"]);
+    dev.load_ptx(ptx, "embassy", &["sync_countdown_kernel"])?;
 
     let f = dev
         .get_func("embassy", "sync_countdown_kernel")
@@ -355,8 +355,8 @@ pub(crate) fn run_hostcall_file_test(dev: Arc<CudaDevice>) -> Result<()> {
         });
     });
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["hostcall_file_test"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_IO_PTX);
+    dev.load_ptx(ptx, "kernel", &["hostcall_file_test"])?;
     let f = dev
         .get_func("kernel", "hostcall_file_test")
         .ok_or(GpuHostError::KernelNotFound("hostcall_file_test"))?;
@@ -507,7 +507,7 @@ pub(crate) fn run_async_hostcall_two(dev: Arc<CudaDevice>) -> Result<()> {
     });
 
     let ptx = cudarc::nvrtc::Ptx::from_src(crate::ASYNC_HOSTCALL_PTX);
-    let _ = dev.load_ptx(ptx, "async_hostcall", &["async_hostcall_two_kernel"]);
+    dev.load_ptx(ptx, "async_hostcall", &["async_hostcall_two_kernel"])?;
     let f = dev
         .get_func("async_hostcall", "async_hostcall_two_kernel")
         .ok_or(GpuHostError::KernelNotFound("async_hostcall_two_kernel"))?;
@@ -586,7 +586,7 @@ pub(crate) fn run_futures_join(dev: Arc<CudaDevice>) -> Result<()> {
     });
 
     let ptx = cudarc::nvrtc::Ptx::from_src(crate::ASYNC_HOSTCALL_PTX);
-    let _ = dev.load_ptx(ptx, "async_hostcall", &["futures_join_kernel"]);
+    dev.load_ptx(ptx, "async_hostcall", &["futures_join_kernel"])?;
     let f = dev
         .get_func("async_hostcall", "futures_join_kernel")
         .ok_or(GpuHostError::KernelNotFound("futures_join_kernel"))?;
@@ -680,8 +680,8 @@ pub(crate) fn run_hostcall_time_test(dev: Arc<CudaDevice>) -> Result<()> {
         });
     });
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["hostcall_stdin_time_test"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_IO_PTX);
+    dev.load_ptx(ptx, "kernel", &["hostcall_stdin_time_test"])?;
     let f = dev
         .get_func("kernel", "hostcall_stdin_time_test")
         .ok_or(GpuHostError::KernelNotFound("hostcall_stdin_time_test"))?;
@@ -743,6 +743,16 @@ pub(crate) fn run_hostcall_time_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_trace_multithread_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Trace multi-thread test (32 threads) ---");
 
+    crate::kernel_routes::load_kernel(
+        &dev,
+        crate::kernel_routes::KernelModule::Io,
+        "kernel_trace_multithread",
+        &["trace_multithread_test"],
+    )?;
+    let f = dev
+        .get_func("kernel_trace_multithread", "trace_multithread_test")
+        .ok_or(GpuHostError::KernelNotFound("trace_multithread_test"))?;
+
     let num_packets = 64u16; // Enough for 32 threads
     let hc_buf = hostcall::HostcallBuffer::new(num_packets)?;
     let dev_ptr = hc_buf.dev_ptr();
@@ -751,18 +761,12 @@ pub(crate) fn run_trace_multithread_test(dev: Arc<CudaDevice>) -> Result<()> {
     unsafe { std::ptr::write_volatile(count_host_ptr, 0u32) };
 
     let hc_buf_ref = std::sync::Arc::new(hc_buf);
-    let hc_buf_listener = std::sync::Arc::clone(&hc_buf_ref);
-    let listener_handle = std::thread::spawn(move || {
-        hc_buf_listener.listen(|_msg| {
+    let listener = crate::harness_support::HostcallListener::start(
+        std::sync::Arc::clone(&hc_buf_ref),
+        |_msg| {
             // Trace events go to stderr via handle_trace, not through on_print
-        });
-    });
-
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["trace_multithread_test"]);
-    let f = dev
-        .get_func("kernel", "trace_multithread_test")
-        .ok_or(GpuHostError::KernelNotFound("trace_multithread_test"))?;
+        },
+    );
 
     let cfg = cudarc::driver::LaunchConfig {
         grid_dim: (1, 1, 1),
@@ -779,8 +783,7 @@ pub(crate) fn run_trace_multithread_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("  Kernel completed.");
 
     std::thread::sleep(std::time::Duration::from_millis(200));
-    hc_buf_ref.signal_shutdown();
-    listener_handle.join().unwrap();
+    listener.finish()?;
 
     let success_count = unsafe { std::ptr::read_volatile(count_host_ptr) };
     unsafe { free_mapped_mem(count_host_ptr)? };
@@ -802,6 +805,16 @@ pub(crate) fn run_trace_multithread_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_trace_assert_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Trace + assert test (32 threads, assert true) ---");
 
+    crate::kernel_routes::load_kernel(
+        &dev,
+        crate::kernel_routes::KernelModule::Io,
+        "kernel_trace_assert",
+        &["trace_assert_test"],
+    )?;
+    let f = dev
+        .get_func("kernel_trace_assert", "trace_assert_test")
+        .ok_or(GpuHostError::KernelNotFound("trace_assert_test"))?;
+
     let num_packets = 64u16;
     let hc_buf = hostcall::HostcallBuffer::new(num_packets)?;
     let dev_ptr = hc_buf.dev_ptr();
@@ -810,16 +823,10 @@ pub(crate) fn run_trace_assert_test(dev: Arc<CudaDevice>) -> Result<()> {
     unsafe { std::ptr::write_volatile(count_host_ptr, 0u32) };
 
     let hc_buf_ref = std::sync::Arc::new(hc_buf);
-    let hc_buf_listener = std::sync::Arc::clone(&hc_buf_ref);
-    let listener_handle = std::thread::spawn(move || {
-        hc_buf_listener.listen(|_msg| {});
-    });
-
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["trace_assert_test"]);
-    let f = dev
-        .get_func("kernel", "trace_assert_test")
-        .ok_or(GpuHostError::KernelNotFound("trace_assert_test"))?;
+    let listener = crate::harness_support::HostcallListener::start(
+        std::sync::Arc::clone(&hc_buf_ref),
+        |_msg| {},
+    );
 
     let cfg = cudarc::driver::LaunchConfig {
         grid_dim: (1, 1, 1),
@@ -836,8 +843,7 @@ pub(crate) fn run_trace_assert_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("  Kernel completed (no trap — assert passed).");
 
     std::thread::sleep(std::time::Duration::from_millis(200));
-    hc_buf_ref.signal_shutdown();
-    listener_handle.join().unwrap();
+    listener.finish()?;
 
     let success_count = unsafe { std::ptr::read_volatile(count_host_ptr) };
     unsafe { free_mapped_mem(count_host_ptr)? };
@@ -865,6 +871,13 @@ pub(crate) fn run_trace_assert_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_session_multi_launch_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- HostcallSession multi-launch test ---");
 
+    crate::kernel_routes::load_kernel(
+        &dev,
+        crate::kernel_routes::KernelModule::Io,
+        "kernel_session",
+        &["session_kernel_a", "session_kernel_b"],
+    )?;
+
     let session = hostcall::HostcallSession::start(16).map_err(|e| GpuHostError::Verification {
         test: "session_multi_launch",
         detail: format!("session start failed: {e}"),
@@ -878,12 +891,9 @@ pub(crate) fn run_session_multi_launch_test(dev: Arc<CudaDevice>) -> Result<()> 
     let (result_host_ptr, result_dev_ptr) = unsafe { alloc_mapped_u32(&dev)? };
     unsafe { std::ptr::write_volatile(result_host_ptr, 0u32) };
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["session_kernel_a", "session_kernel_b"]);
-
     // --- Launch Kernel A ---
     let f_a = dev
-        .get_func("kernel", "session_kernel_a")
+        .get_func("kernel_session", "session_kernel_a")
         .ok_or(GpuHostError::KernelNotFound("session_kernel_a"))?;
 
     let cfg = cudarc::driver::LaunchConfig {
@@ -909,7 +919,7 @@ pub(crate) fn run_session_multi_launch_test(dev: Arc<CudaDevice>) -> Result<()> 
 
     // --- Launch Kernel B ---
     let f_b = dev
-        .get_func("kernel", "session_kernel_b")
+        .get_func("kernel_session", "session_kernel_b")
         .ok_or(GpuHostError::KernelNotFound("session_kernel_b"))?;
 
     println!("  Launching session_kernel_b...");
@@ -957,6 +967,13 @@ pub(crate) fn run_session_multi_launch_test(dev: Arc<CudaDevice>) -> Result<()> 
 pub(crate) fn run_multi_cmd_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Multi-command kernel test ---");
 
+    crate::kernel_routes::load_kernel(
+        &dev,
+        crate::kernel_routes::KernelModule::Io,
+        "kernel_multi_cmd",
+        &["multi_cmd_kernel"],
+    )?;
+
     let session = hostcall::HostcallSession::start(16).map_err(|e| GpuHostError::Verification {
         test: "multi_cmd",
         detail: format!("session start failed: {e}"),
@@ -979,11 +996,8 @@ pub(crate) fn run_multi_cmd_test(dev: Arc<CudaDevice>) -> Result<()> {
         }
     }
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["multi_cmd_kernel"]);
-
     let f = dev
-        .get_func("kernel", "multi_cmd_kernel")
+        .get_func("kernel_multi_cmd", "multi_cmd_kernel")
         .ok_or(GpuHostError::KernelNotFound("multi_cmd_kernel"))?;
 
     let cfg = cudarc::driver::LaunchConfig {
@@ -1064,6 +1078,13 @@ pub(crate) fn run_multi_cmd_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_cross_pipeline_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Cross-launch pipeline test ---");
 
+    crate::kernel_routes::load_kernel(
+        &dev,
+        crate::kernel_routes::KernelModule::Io,
+        "kernel_cross_pipeline",
+        &["pipeline_writer_kernel", "pipeline_reader_kernel"],
+    )?;
+
     let session = hostcall::HostcallSession::start(16).map_err(|e| GpuHostError::Verification {
         test: "cross_pipeline",
         detail: format!("session start failed: {e}"),
@@ -1076,13 +1097,6 @@ pub(crate) fn run_cross_pipeline_test(dev: Arc<CudaDevice>) -> Result<()> {
     // Result buffer: Kernel B writes final output
     let (result_host, result_dev) = unsafe { alloc_mapped_result_array(&dev, count as usize)? };
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(
-        ptx,
-        "kernel",
-        &["pipeline_writer_kernel", "pipeline_reader_kernel"],
-    );
-
     let cfg = cudarc::driver::LaunchConfig {
         grid_dim: (1, 1, 1),
         block_dim: (1, 1, 1),
@@ -1091,7 +1105,7 @@ pub(crate) fn run_cross_pipeline_test(dev: Arc<CudaDevice>) -> Result<()> {
 
     // --- Stage 1: Writer kernel ---
     let f_writer = dev
-        .get_func("kernel", "pipeline_writer_kernel")
+        .get_func("kernel_cross_pipeline", "pipeline_writer_kernel")
         .ok_or(GpuHostError::KernelNotFound("pipeline_writer_kernel"))?;
 
     println!("  Stage 1: Launching pipeline_writer_kernel...");
@@ -1113,7 +1127,7 @@ pub(crate) fn run_cross_pipeline_test(dev: Arc<CudaDevice>) -> Result<()> {
 
     // --- Stage 2: Reader kernel ---
     let f_reader = dev
-        .get_func("kernel", "pipeline_reader_kernel")
+        .get_func("kernel_cross_pipeline", "pipeline_reader_kernel")
         .ok_or(GpuHostError::KernelNotFound("pipeline_reader_kernel"))?;
 
     println!("  Stage 2: Launching pipeline_reader_kernel...");
@@ -1162,18 +1176,18 @@ pub(crate) fn run_cross_pipeline_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_pipeline_api_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Pipeline API test ---");
 
+    crate::kernel_routes::load_kernel(
+        &dev,
+        crate::kernel_routes::KernelModule::Io,
+        "kernel_pipeline_api",
+        &["pipeline_writer_kernel", "pipeline_reader_kernel"],
+    )?;
+
     let count = 4u32;
 
     // Allocate shared buffers
     let (data_host, data_dev) = unsafe { alloc_mapped_result_array(&dev, count as usize)? };
     let (result_host, result_dev) = unsafe { alloc_mapped_result_array(&dev, count as usize)? };
-
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(
-        ptx,
-        "kernel",
-        &["pipeline_writer_kernel", "pipeline_reader_kernel"],
-    );
 
     let cfg = cudarc::driver::LaunchConfig {
         grid_dim: (1, 1, 1),
@@ -1192,7 +1206,7 @@ pub(crate) fn run_pipeline_api_test(dev: Arc<CudaDevice>) -> Result<()> {
         })?
         .stage(move |hc_ptr| {
             let f = dev_a
-                .get_func("kernel", "pipeline_writer_kernel")
+                .get_func("kernel_pipeline_api", "pipeline_writer_kernel")
                 .ok_or(GpuHostError::KernelNotFound("pipeline_writer_kernel"))?;
             unsafe { f.launch(cfg, (hc_ptr, data_dev, count))? };
             dev_a.synchronize()?;
@@ -1201,7 +1215,7 @@ pub(crate) fn run_pipeline_api_test(dev: Arc<CudaDevice>) -> Result<()> {
         })
         .stage(move |hc_ptr| {
             let f = dev_b
-                .get_func("kernel", "pipeline_reader_kernel")
+                .get_func("kernel_pipeline_api", "pipeline_reader_kernel")
                 .ok_or(GpuHostError::KernelNotFound("pipeline_reader_kernel"))?;
             unsafe { f.launch(cfg, (hc_ptr, data_dev, result_dev, count))? };
             dev_b.synchronize()?;
@@ -1245,6 +1259,13 @@ pub(crate) fn run_pipeline_api_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_convergence_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Iterative convergence test ---");
 
+    crate::kernel_routes::load_kernel(
+        &dev,
+        crate::kernel_routes::KernelModule::Io,
+        "kernel_convergence",
+        &["convergence_kernel"],
+    )?;
+
     let session = hostcall::HostcallSession::start(16).map_err(|e| GpuHostError::Verification {
         test: "convergence",
         detail: format!("session start failed: {e}"),
@@ -1263,11 +1284,8 @@ pub(crate) fn run_convergence_test(dev: Arc<CudaDevice>) -> Result<()> {
         unsafe { std::ptr::write_volatile(input_host.add(i), val) };
     }
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["convergence_kernel"]);
-
     let f = dev
-        .get_func("kernel", "convergence_kernel")
+        .get_func("kernel_convergence", "convergence_kernel")
         .ok_or(GpuHostError::KernelNotFound("convergence_kernel"))?;
 
     let cfg = cudarc::driver::LaunchConfig {
@@ -1351,6 +1369,13 @@ pub(crate) fn run_convergence_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_autonomous_pipeline_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Autonomous pipeline test ---");
 
+    crate::kernel_routes::load_kernel(
+        &dev,
+        crate::kernel_routes::KernelModule::Io,
+        "kernel_autonomous_pipeline",
+        &["autonomous_pipeline_kernel"],
+    )?;
+
     let dataset_a: Vec<u32> = vec![4, 25, 144];
     let dataset_b: Vec<u32> = vec![10000, 1000000, 99999999];
     let count_a = dataset_a.len() as u32;
@@ -1376,9 +1401,6 @@ pub(crate) fn run_autonomous_pipeline_test(dev: Arc<CudaDevice>) -> Result<()> {
         unsafe { std::ptr::write_volatile(in_b_host.add(i), v) };
     }
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["autonomous_pipeline_kernel"]);
-
     let cfg = cudarc::driver::LaunchConfig {
         grid_dim: (1, 1, 1),
         block_dim: (1, 1, 1),
@@ -1396,7 +1418,7 @@ pub(crate) fn run_autonomous_pipeline_test(dev: Arc<CudaDevice>) -> Result<()> {
         })?
         .stage(move |hc_ptr| {
             let f = dev_a
-                .get_func("kernel", "autonomous_pipeline_kernel")
+                .get_func("kernel_autonomous_pipeline", "autonomous_pipeline_kernel")
                 .ok_or(GpuHostError::KernelNotFound("autonomous_pipeline_kernel"))?;
             unsafe {
                 f.launch(
@@ -1417,7 +1439,7 @@ pub(crate) fn run_autonomous_pipeline_test(dev: Arc<CudaDevice>) -> Result<()> {
         })
         .stage(move |hc_ptr| {
             let f = dev_b
-                .get_func("kernel", "autonomous_pipeline_kernel")
+                .get_func("kernel_autonomous_pipeline", "autonomous_pipeline_kernel")
                 .ok_or(GpuHostError::KernelNotFound("autonomous_pipeline_kernel"))?;
             unsafe {
                 f.launch(
@@ -1514,6 +1536,13 @@ pub(crate) fn run_autonomous_pipeline_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_flight_recorder_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Flight recorder test ---");
 
+    crate::kernel_routes::load_kernel(
+        &dev,
+        crate::kernel_routes::KernelModule::Io,
+        "kernel_flight_recorder",
+        &["flight_recorder_test"],
+    )?;
+
     let session = hostcall::HostcallSession::start(16).map_err(|e| GpuHostError::Verification {
         test: "flight_recorder",
         detail: format!("session start failed: {e}"),
@@ -1528,11 +1557,8 @@ pub(crate) fn run_flight_recorder_test(dev: Arc<CudaDevice>) -> Result<()> {
     let (crash_host, crash_dev) = unsafe { alloc_mapped_u32(&dev)? };
     unsafe { std::ptr::write_volatile(crash_host, 1u32) };
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["flight_recorder_test"]);
-
     let f = dev
-        .get_func("kernel", "flight_recorder_test")
+        .get_func("kernel_flight_recorder", "flight_recorder_test")
         .ok_or(GpuHostError::KernelNotFound("flight_recorder_test"))?;
 
     let cfg = cudarc::driver::LaunchConfig {
@@ -1586,6 +1612,16 @@ pub(crate) fn run_std_future_print_test(dev: Arc<CudaDevice>) -> Result<()> {
 
     use std::sync::{Arc as StdArc, Mutex};
 
+    crate::kernel_routes::load_kernel(
+        &dev,
+        crate::kernel_routes::KernelModule::Io,
+        "kernel_std_future_print",
+        &["std_future_print_kernel"],
+    )?;
+    let f = dev
+        .get_func("kernel_std_future_print", "std_future_print_kernel")
+        .ok_or(GpuHostError::KernelNotFound("std_future_print_kernel"))?;
+
     let hc_buf = hostcall::HostcallBuffer::new(4)?;
     let dev_ptr = hc_buf.dev_ptr();
 
@@ -1596,20 +1632,12 @@ pub(crate) fn run_std_future_print_test(dev: Arc<CudaDevice>) -> Result<()> {
     unsafe { std::ptr::write_volatile(result_host_ptr, 0u32) };
 
     let hc_buf_ref = StdArc::new(hc_buf);
-    let hc_buf_listener = StdArc::clone(&hc_buf_ref);
-    let listener_handle = std::thread::spawn(move || {
-        hc_buf_listener.listen(|msg| {
+    let listener =
+        crate::harness_support::HostcallListener::start(StdArc::clone(&hc_buf_ref), move |msg| {
             let s = String::from_utf8_lossy(msg).to_string();
             println!("  [HOST] Received: \"{s}\"");
             messages_clone.lock().unwrap().push(s);
         });
-    });
-
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["std_future_print_kernel"]);
-    let f = dev
-        .get_func("kernel", "std_future_print_kernel")
-        .ok_or(GpuHostError::KernelNotFound("std_future_print_kernel"))?;
 
     // Single thread — baseline test, no warp cooperation yet
     let cfg = LaunchConfig {
@@ -1627,8 +1655,7 @@ pub(crate) fn run_std_future_print_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("  Kernel completed.");
 
     std::thread::sleep(std::time::Duration::from_millis(100));
-    hc_buf_ref.signal_shutdown();
-    listener_handle.join().unwrap();
+    listener.finish()?;
 
     let result_val = unsafe { std::ptr::read_volatile(result_host_ptr) };
     unsafe { free_mapped_mem(result_host_ptr)? };
@@ -1662,6 +1689,21 @@ pub(crate) fn run_warp_cooperative_future_test(dev: Arc<CudaDevice>) -> Result<(
 
     use std::sync::{Arc as StdArc, Mutex};
 
+    crate::kernel_routes::load_kernel(
+        &dev,
+        crate::kernel_routes::KernelModule::Io,
+        "kernel_warp_cooperative_future",
+        &["warp_cooperative_future_kernel"],
+    )?;
+    let f = dev
+        .get_func(
+            "kernel_warp_cooperative_future",
+            "warp_cooperative_future_kernel",
+        )
+        .ok_or(GpuHostError::KernelNotFound(
+            "warp_cooperative_future_kernel",
+        ))?;
+
     let hc_buf = hostcall::HostcallBuffer::new(4)?;
     let dev_ptr = hc_buf.dev_ptr();
 
@@ -1679,22 +1721,12 @@ pub(crate) fn run_warp_cooperative_future_test(dev: Arc<CudaDevice>) -> Result<(
     }
 
     let hc_buf_ref = StdArc::new(hc_buf);
-    let hc_buf_listener = StdArc::clone(&hc_buf_ref);
-    let listener_handle = std::thread::spawn(move || {
-        hc_buf_listener.listen(|msg| {
+    let listener =
+        crate::harness_support::HostcallListener::start(StdArc::clone(&hc_buf_ref), move |msg| {
             let s = String::from_utf8_lossy(msg).to_string();
             println!("  [HOST] Received: \"{s}\"");
             messages_clone.lock().unwrap().push(s);
         });
-    });
-
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["warp_cooperative_future_kernel"]);
-    let f = dev
-        .get_func("kernel", "warp_cooperative_future_kernel")
-        .ok_or(GpuHostError::KernelNotFound(
-            "warp_cooperative_future_kernel",
-        ))?;
 
     // Launch with exactly 32 threads = 1 full warp
     let cfg = LaunchConfig {
@@ -1712,8 +1744,7 @@ pub(crate) fn run_warp_cooperative_future_test(dev: Arc<CudaDevice>) -> Result<(
     println!("  Kernel completed.");
 
     std::thread::sleep(std::time::Duration::from_millis(100));
-    hc_buf_ref.signal_shutdown();
-    listener_handle.join().unwrap();
+    listener.finish()?;
 
     let result_val = unsafe { std::ptr::read_volatile(result_host_ptr) };
     unsafe { free_mapped_mem(result_host_ptr)? };
@@ -1766,6 +1797,21 @@ pub(crate) fn run_warp_cooperative_two_futures_test(dev: Arc<CudaDevice>) -> Res
 
     use std::sync::{Arc as StdArc, Mutex};
 
+    crate::kernel_routes::load_kernel(
+        &dev,
+        crate::kernel_routes::KernelModule::Io,
+        "kernel_warp_cooperative_two_futures",
+        &["warp_cooperative_two_futures_kernel"],
+    )?;
+    let f = dev
+        .get_func(
+            "kernel_warp_cooperative_two_futures",
+            "warp_cooperative_two_futures_kernel",
+        )
+        .ok_or(GpuHostError::KernelNotFound(
+            "warp_cooperative_two_futures_kernel",
+        ))?;
+
     let hc_buf = hostcall::HostcallBuffer::new(4)?;
     let dev_ptr = hc_buf.dev_ptr();
 
@@ -1782,22 +1828,12 @@ pub(crate) fn run_warp_cooperative_two_futures_test(dev: Arc<CudaDevice>) -> Res
     }
 
     let hc_buf_ref = StdArc::new(hc_buf);
-    let hc_buf_listener = StdArc::clone(&hc_buf_ref);
-    let listener_handle = std::thread::spawn(move || {
-        hc_buf_listener.listen(|msg| {
+    let listener =
+        crate::harness_support::HostcallListener::start(StdArc::clone(&hc_buf_ref), move |msg| {
             let s = String::from_utf8_lossy(msg).to_string();
             println!("  [HOST] Received: \"{s}\"");
             messages_clone.lock().unwrap().push(s);
         });
-    });
-
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["warp_cooperative_two_futures_kernel"]);
-    let f = dev
-        .get_func("kernel", "warp_cooperative_two_futures_kernel")
-        .ok_or(GpuHostError::KernelNotFound(
-            "warp_cooperative_two_futures_kernel",
-        ))?;
 
     let cfg = LaunchConfig {
         grid_dim: (1, 1, 1),
@@ -1814,8 +1850,7 @@ pub(crate) fn run_warp_cooperative_two_futures_test(dev: Arc<CudaDevice>) -> Res
     println!("  Kernel completed.");
 
     std::thread::sleep(std::time::Duration::from_millis(100));
-    hc_buf_ref.signal_shutdown();
-    listener_handle.join().unwrap();
+    listener.finish()?;
 
     let result_val = unsafe { std::ptr::read_volatile(result_host_ptr) };
     unsafe { free_mapped_mem(result_host_ptr)? };
@@ -1868,6 +1903,16 @@ pub(crate) fn run_warp_result_future_test(dev: Arc<CudaDevice>) -> Result<()> {
 
     use std::sync::{Arc as StdArc, Mutex};
 
+    crate::kernel_routes::load_kernel(
+        &dev,
+        crate::kernel_routes::KernelModule::Io,
+        "kernel_warp_result_future",
+        &["warp_result_future_kernel"],
+    )?;
+    let f = dev
+        .get_func("kernel_warp_result_future", "warp_result_future_kernel")
+        .ok_or(GpuHostError::KernelNotFound("warp_result_future_kernel"))?;
+
     let hc_buf = hostcall::HostcallBuffer::new(4)?;
     let dev_ptr = hc_buf.dev_ptr();
 
@@ -1884,20 +1929,12 @@ pub(crate) fn run_warp_result_future_test(dev: Arc<CudaDevice>) -> Result<()> {
     }
 
     let hc_buf_ref = StdArc::new(hc_buf);
-    let hc_buf_listener = StdArc::clone(&hc_buf_ref);
-    let listener_handle = std::thread::spawn(move || {
-        hc_buf_listener.listen(|msg| {
+    let listener =
+        crate::harness_support::HostcallListener::start(StdArc::clone(&hc_buf_ref), move |msg| {
             let s = String::from_utf8_lossy(msg).to_string();
             println!("  [HOST] Received: \"{s}\"");
             messages_clone.lock().unwrap().push(s);
         });
-    });
-
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["warp_result_future_kernel"]);
-    let f = dev
-        .get_func("kernel", "warp_result_future_kernel")
-        .ok_or(GpuHostError::KernelNotFound("warp_result_future_kernel"))?;
 
     let cfg = LaunchConfig {
         grid_dim: (1, 1, 1),
@@ -1914,8 +1951,7 @@ pub(crate) fn run_warp_result_future_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("  Kernel completed.");
 
     std::thread::sleep(std::time::Duration::from_millis(100));
-    hc_buf_ref.signal_shutdown();
-    listener_handle.join().unwrap();
+    listener.finish()?;
 
     let result_val = unsafe { std::ptr::read_volatile(result_host_ptr) };
     unsafe { free_mapped_mem(result_host_ptr)? };
@@ -1977,6 +2013,19 @@ pub(crate) fn run_std_future_two_prints_test(dev: Arc<CudaDevice>) -> Result<()>
 
     use std::sync::{Arc as StdArc, Mutex};
 
+    crate::kernel_routes::load_kernel(
+        &dev,
+        crate::kernel_routes::KernelModule::Io,
+        "kernel_std_future_two_prints",
+        &["std_future_two_prints_kernel"],
+    )?;
+    let f = dev
+        .get_func(
+            "kernel_std_future_two_prints",
+            "std_future_two_prints_kernel",
+        )
+        .ok_or(GpuHostError::KernelNotFound("std_future_two_prints_kernel"))?;
+
     let hc_buf = hostcall::HostcallBuffer::new(4)?;
     let dev_ptr = hc_buf.dev_ptr();
 
@@ -1987,20 +2036,12 @@ pub(crate) fn run_std_future_two_prints_test(dev: Arc<CudaDevice>) -> Result<()>
     unsafe { std::ptr::write_volatile(result_host_ptr, 0u32) };
 
     let hc_buf_ref = StdArc::new(hc_buf);
-    let hc_buf_listener = StdArc::clone(&hc_buf_ref);
-    let listener_handle = std::thread::spawn(move || {
-        hc_buf_listener.listen(|msg| {
+    let listener =
+        crate::harness_support::HostcallListener::start(StdArc::clone(&hc_buf_ref), move |msg| {
             let s = String::from_utf8_lossy(msg).to_string();
             println!("  [HOST] Received: \"{s}\"");
             messages_clone.lock().unwrap().push(s);
         });
-    });
-
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["std_future_two_prints_kernel"]);
-    let f = dev
-        .get_func("kernel", "std_future_two_prints_kernel")
-        .ok_or(GpuHostError::KernelNotFound("std_future_two_prints_kernel"))?;
 
     let cfg = LaunchConfig {
         grid_dim: (1, 1, 1),
@@ -2017,8 +2058,7 @@ pub(crate) fn run_std_future_two_prints_test(dev: Arc<CudaDevice>) -> Result<()>
     println!("  Kernel completed.");
 
     std::thread::sleep(std::time::Duration::from_millis(100));
-    hc_buf_ref.signal_shutdown();
-    listener_handle.join().unwrap();
+    listener.finish()?;
 
     let result_val = unsafe { std::ptr::read_volatile(result_host_ptr) };
     unsafe { free_mapped_mem(result_host_ptr)? };

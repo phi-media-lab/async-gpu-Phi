@@ -11,8 +11,8 @@ use gpu_host::mapped_mem::{alloc_mapped_result_array, free_mapped_mem};
 pub(crate) fn run_warp_intrinsics_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Warp Intrinsics Test (warp-future.3) ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["test_warp_intrinsics"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_TEST_PTX);
+    dev.load_ptx(ptx, "kernel", &["test_warp_intrinsics"])?;
     let f = dev
         .get_func("kernel", "test_warp_intrinsics")
         .ok_or(GpuHostError::KernelNotFound("test_warp_intrinsics"))?;
@@ -82,8 +82,8 @@ pub(crate) fn run_warp_future_print_test(dev: Arc<CudaDevice>) -> Result<()> {
         });
     });
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["warp_future_print_test"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_TEST_PTX);
+    dev.load_ptx(ptx, "kernel", &["warp_future_print_test"])?;
     let f = dev
         .get_func("kernel", "warp_future_print_test")
         .ok_or(GpuHostError::KernelNotFound("warp_future_print_test"))?;
@@ -156,8 +156,8 @@ pub(crate) fn run_warp_future_multi_print_test(dev: Arc<CudaDevice>) -> Result<(
         });
     });
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["warp_future_multi_print_test"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_TEST_PTX);
+    dev.load_ptx(ptx, "kernel", &["warp_future_multi_print_test"])?;
     let f = dev
         .get_func("kernel", "warp_future_multi_print_test")
         .ok_or(GpuHostError::KernelNotFound("warp_future_multi_print_test"))?;
@@ -240,8 +240,8 @@ pub(crate) fn run_warp_print_test(dev: Arc<CudaDevice>) -> Result<()> {
         });
     });
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["warp_print_test"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_TEST_PTX);
+    dev.load_ptx(ptx, "kernel", &["warp_print_test"])?;
     let f = dev
         .get_func("kernel", "warp_print_test")
         .ok_or(GpuHostError::KernelNotFound("warp_print_test"))?;
@@ -316,8 +316,8 @@ pub(crate) fn run_warp_cfg_if_else_test(dev: Arc<CudaDevice>) -> Result<()> {
         flag: u64,
         module_name: &'static str,
     ) -> Result<(u32, Vec<String>)> {
-        let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-        let _ = dev.load_ptx(ptx, module_name, &["warp_cfg_if_else_test"]);
+        let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_TEST_PTX);
+        dev.load_ptx(ptx, module_name, &["warp_cfg_if_else_test"])?;
         let f = dev
             .get_func(module_name, "warp_cfg_if_else_test")
             .ok_or(GpuHostError::KernelNotFound("warp_cfg_if_else_test"))?;
@@ -409,8 +409,8 @@ pub(crate) fn run_warp_cfg_loop_test(dev: Arc<CudaDevice>) -> Result<()> {
         shared_mem_bytes: 0,
     };
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel_loop", &["warp_cfg_loop_test"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_TEST_PTX);
+    dev.load_ptx(ptx, "kernel_loop", &["warp_cfg_loop_test"])?;
     let f = dev
         .get_func("kernel_loop", "warp_cfg_loop_test")
         .ok_or(GpuHostError::KernelNotFound("warp_cfg_loop_test"))?;
@@ -491,8 +491,8 @@ pub(crate) fn run_warp_cfg_match_test(dev: Arc<CudaDevice>) -> Result<()> {
         cmd: u64,
         module_name: &'static str,
     ) -> Result<(u32, Vec<String>)> {
-        let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-        let _ = dev.load_ptx(ptx, module_name, &["warp_cfg_match_test"]);
+        let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_TEST_PTX);
+        dev.load_ptx(ptx, module_name, &["warp_cfg_match_test"])?;
         let f = dev
             .get_func(module_name, "warp_cfg_match_test")
             .ok_or(GpuHostError::KernelNotFound("warp_cfg_match_test"))?;
@@ -600,8 +600,8 @@ pub(crate) fn run_warp_cfg_nested_test(dev: Arc<CudaDevice>) -> Result<()> {
         cmd: u64,
         module_name: &'static str,
     ) -> Result<(u32, Vec<String>)> {
-        let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-        let _ = dev.load_ptx(ptx, module_name, &["warp_cfg_nested_test"]);
+        let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_TEST_PTX);
+        dev.load_ptx(ptx, module_name, &["warp_cfg_nested_test"])?;
         let f = dev
             .get_func(module_name, "warp_cfg_nested_test")
             .ok_or(GpuHostError::KernelNotFound("warp_cfg_nested_test"))?;
@@ -738,8 +738,8 @@ pub(crate) fn run_hybrid_executor_test(dev: Arc<CudaDevice>) -> Result<()> {
         });
     });
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["hybrid_executor_test"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_IO_PTX);
+    dev.load_ptx(ptx, "kernel", &["hybrid_executor_test"])?;
     let f = dev
         .get_func("kernel", "hybrid_executor_test")
         .ok_or(GpuHostError::KernelNotFound("hybrid_executor_test"))?;
@@ -836,8 +836,8 @@ pub(crate) fn run_hybrid_stress_test(dev: Arc<CudaDevice>) -> Result<()> {
         });
     });
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["hybrid_stress_test"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_IO_PTX);
+    dev.load_ptx(ptx, "kernel", &["hybrid_stress_test"])?;
     let f = dev
         .get_func("kernel", "hybrid_stress_test")
         .ok_or(GpuHostError::KernelNotFound("hybrid_stress_test"))?;
@@ -942,6 +942,16 @@ pub(crate) fn run_warp_try_test(dev: Arc<CudaDevice>) -> Result<()> {
 
     use gpu_host::hostcall;
 
+    crate::kernel_routes::load_kernel(
+        &dev,
+        crate::kernel_routes::KernelModule::Test,
+        "kernel_warp_try",
+        &["warp_try_open_test"],
+    )?;
+    let f = dev
+        .get_func("kernel_warp_try", "warp_try_open_test")
+        .ok_or(GpuHostError::KernelNotFound("warp_try_open_test"))?;
+
     // Capture print messages via callback
     let msgs: std::sync::Arc<std::sync::Mutex<Vec<String>>> =
         std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
@@ -959,12 +969,6 @@ pub(crate) fn run_warp_try_test(dev: Arc<CudaDevice>) -> Result<()> {
 
     let (result_host, result_dev) = unsafe { gpu_host::mapped_mem::alloc_mapped_u32(&dev)? };
     unsafe { std::ptr::write_volatile(result_host, 0u32) };
-
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["warp_try_open_test"]);
-    let f = dev
-        .get_func("kernel", "warp_try_open_test")
-        .ok_or(GpuHostError::KernelNotFound("warp_try_open_test"))?;
 
     let cfg = LaunchConfig {
         grid_dim: (1, 1, 1),
@@ -1022,6 +1026,16 @@ pub(crate) fn run_warp_await_test(dev: Arc<CudaDevice>) -> Result<()> {
 
     use gpu_host::hostcall;
 
+    crate::kernel_routes::load_kernel(
+        &dev,
+        crate::kernel_routes::KernelModule::Test,
+        "kernel_warp_await",
+        &["warp_await_test"],
+    )?;
+    let f = dev
+        .get_func("kernel_warp_await", "warp_await_test")
+        .ok_or(GpuHostError::KernelNotFound("warp_await_test"))?;
+
     // Capture print messages via callback
     let msgs: std::sync::Arc<std::sync::Mutex<Vec<String>>> =
         std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
@@ -1039,12 +1053,6 @@ pub(crate) fn run_warp_await_test(dev: Arc<CudaDevice>) -> Result<()> {
 
     let (result_host, result_dev) = unsafe { gpu_host::mapped_mem::alloc_mapped_u32(&dev)? };
     unsafe { std::ptr::write_volatile(result_host, 0u32) };
-
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["warp_await_test"]);
-    let f = dev
-        .get_func("kernel", "warp_await_test")
-        .ok_or(GpuHostError::KernelNotFound("warp_await_test"))?;
 
     let cfg = LaunchConfig {
         grid_dim: (1, 1, 1),
@@ -1103,6 +1111,13 @@ pub(crate) fn run_warp_e2e_test(dev: Arc<CudaDevice>) -> Result<()> {
 
     use gpu_host::hostcall;
 
+    crate::kernel_routes::load_kernel(
+        &dev,
+        crate::kernel_routes::KernelModule::Test,
+        "kernel_warp_e2e",
+        &["warp_e2e_test"],
+    )?;
+
     let msgs: std::sync::Arc<std::sync::Mutex<Vec<String>>> =
         std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
     let msgs_clone = msgs.clone();
@@ -1120,10 +1135,8 @@ pub(crate) fn run_warp_e2e_test(dev: Arc<CudaDevice>) -> Result<()> {
     let (result_host, result_dev) = unsafe { gpu_host::mapped_mem::alloc_mapped_u32(&dev)? };
     unsafe { std::ptr::write_volatile(result_host, 0u32) };
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["warp_e2e_test"]);
     let f = dev
-        .get_func("kernel", "warp_e2e_test")
+        .get_func("kernel_warp_e2e", "warp_e2e_test")
         .ok_or(GpuHostError::KernelNotFound("warp_e2e_test"))?;
 
     let cfg = LaunchConfig {
@@ -1181,13 +1194,18 @@ pub(crate) fn run_warp_e2e_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_rustc_async_baseline_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- rustc async baseline test (rustc-warp.1) ---");
 
+    crate::kernel_routes::load_kernel(
+        &dev,
+        crate::kernel_routes::KernelModule::Test,
+        "kernel_rustc_async",
+        &["rustc_async_baseline_test"],
+    )?;
+
     let (result_host, result_dev) = unsafe { gpu_host::mapped_mem::alloc_mapped_u32(&dev)? };
     unsafe { std::ptr::write_volatile(result_host, 0u32) };
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["rustc_async_baseline_test"]);
     let f = dev
-        .get_func("kernel", "rustc_async_baseline_test")
+        .get_func("kernel_rustc_async", "rustc_async_baseline_test")
         .ok_or(GpuHostError::KernelNotFound("rustc_async_baseline_test"))?;
 
     let cfg = LaunchConfig {

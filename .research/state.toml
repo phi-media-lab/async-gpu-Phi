@@ -4,8 +4,8 @@
 
 [meta]
 created = "2026-03-11"
-total_cycles = 643
-completed_tasks = 827
+total_cycles = 644
+completed_tasks = 833
 status = "running"     # ready | running | blocked | completed
 
 # Project North Star — the ONE thing all epics serve:
@@ -14,12 +14,12 @@ status = "running"     # ready | running | blocked | completed
 # No GPU concepts leak — no kernels, no warps, no cudaMemcpy, no device pointers.
 
 # Current cycle position (RECOVER → GATE → SELECT → DISPATCH → SAVE → ROUTE)
-current_step = "dispatch"
-current_task_id = "docs-examples.4,docs-cleanup.1"
+current_step = "select"
+current_task_id = "priority-progress-model.1"
 
 # Sequence counters
-brainstorm_seq = 134
-tasks_since_brainstorm = 10
+brainstorm_seq = 135
+tasks_since_brainstorm = 0
 
 # ---
 # Epics — Strategic milestones (3 strategic + 1 evergreen)
@@ -167,6 +167,23 @@ title = "CUDA Graph Scheduling — static async pipelines compile to CUDA Graphs
 status = "pending"
 priority = "low"
 # success_criteria archived — will be refined when story activates
+
+[[stories]]
+id = "responsive-execution"
+epic = "invisible-exec"
+title = "Responsive Execution — typed priorities across GPU tasks and host services"
+status = "active"
+priority = "high"
+depends_on = "unified-runtime"
+success_criteria = [
+    "One shared Priority/task context propagates spawn → wake/requeue → hostcall request → host completion without legacy API regression",
+    "Low saturation cannot consume High executor slots or explicitly reserved High hostcall credits; bounds are stated in dispatch/service counts, not wall time",
+    "Typed waits reject High→Normal/Low and Normal→Low dependencies at compile time, while valid equal/upward waits compile and complete on a real GPU",
+    "Stale task/waker generations cannot wake or join a recycled slot; cancellation and shutdown reach one observable terminal state",
+    "Multi-warp adversarial stress shows weighted High service and eventual Low progress under a documented bounded-poll assumption",
+    "Fresh hazard uses the fresh GPU result; stale/deadline paths discard it and emit watchdog_conservative_stop, with no hard-real-time or actuator-control claim",
+]
+litmus_test = "A typed Low-saturated GPU workload injects a High task whose metadata crosses an opt-in-reserved hostcall and returns to the same logical task context; High is admitted and serviced at the specified cooperative boundary, Low finishes, invalid downward waits fail compilation, and stale/deadline fault injection never consumes the stale GPU result."
 
 # --- perf-transparent stories ---
 
@@ -595,6 +612,63 @@ success_criteria = [
     "No stale BLOG_DRAFT.md or other orphaned docs",
 ]
 
+# --- responsive-execution ---
+
+[[features]]
+id = "typed-priority"
+story = "responsive-execution"
+title = "Typed priority contexts and inversion-free join dependencies"
+status = "active"
+goal = "Make the safe typed path reject downward-priority waits while preserving explicit runtime/wire metadata"
+success_criteria = [
+    "PriorityToken has no public constructor and is issued only after typed task admission at the matching runtime priority",
+    "Compile-pass matrix accepts Low→Low/Normal/High, Normal→Normal/High, High→High; compile-fail rejects every downward edge",
+    "TypedJoinHandle uses caller-owned generation-stable completion storage rather than recyclable TaskId as capability",
+    "GPU E2E covers Ready, Pending+wake, cancellation, shutdown and exactly-once join result",
+    "Documentation states that raw Future/channel/lock APIs remain outside the guarantee",
+]
+
+[[features]]
+id = "priority-hostcall-e2e"
+story = "responsive-execution"
+title = "Priority hostcall compatibility and real-GPU end-to-end closure"
+status = "completed"
+goal = "Turn the implemented wire/queue/reserve contract into a reproducible GPU integration gate"
+success_criteria = [
+    "Trace and priority kernels resolve from KERNEL_IO and every load_ptx error is propagated before listener/kernel launch",
+    "Legacy reserve=0 32-lane trace completes without capacity regression, crash or buffer lifetime violation",
+    "Opt-in High reserve accepts High after General credits are saturated by Low/Normal and returns packets to the correct pool",
+    "task_id/effective_priority round-trip through completion matches the originating typed task",
+    "Blocked Low syscall is documented as non-preemptible and cannot be used to claim a deadline bound",
+]
+
+[[features]]
+id = "priority-handle-safety"
+story = "responsive-execution"
+title = "Generation-safe wake, join and effective-priority updates"
+status = "completed"
+goal = "Prevent recycled-slot ABA and make dynamic effective-priority updates observable and queue-correct"
+success_criteria = [
+    "RawWaker data contains or validates a slot generation; a stale waker cannot affect a later occupant",
+    "Generation wrap/reuse is covered by a bounded model test and a real-GPU stress test",
+    "Changing effective priority of a QUEUED task relocates it exactly once or returns an explicit deferred-update result",
+    "Duplicate wake, wake-during-RUNNING, cancellation and relocation preserve one queue membership and one terminal Drop",
+]
+
+[[features]]
+id = "priority-progress-model"
+story = "responsive-execution"
+title = "GPU-specific cooperative fairness and progress contract"
+status = "pending"
+goal = "Define what 8H:4N:1L guarantees under SIMT, multiple warps and bounded polls, without claiming hard real time"
+success_criteria = [
+    "A written model names poll quantum, warp residency, active-mask, barrier, memory-scope and host-service assumptions",
+    "Model/property tests bound dispatch-count service for High/Normal/Low and show eventual Low service under sustained High load",
+    "Multi-warp adversarial GPU stress agrees with the model across wake, spawn, shutdown and queue-wrap schedules",
+    "Telemetry detects an over-budget/non-yielding poll and classifies the result FAIL or UNKNOWN without hanging the GPU indefinitely",
+    "Wall-clock measurements remain diagnostic unless platform WCET assumptions are separately supplied",
+]
+
 # ---
 # Tasks (active/pending only — done → archive/)
 # ---
@@ -861,6 +935,109 @@ kind = "experiment"
 status = "done"
 depends = ["docs-readme.3", "docs-refresh.2", "docs-refresh.3", "docs-examples.4"]
 
+# --- responsive-execution ---
+
+[[tasks]]
+id = "priority-hostcall-e2e.1"
+feature = "priority-hostcall-e2e"
+title = "Fix trace PTX IO routing and propagate load errors; audit listener/buffer lifetime after pre-launch failure"
+kind = "experiment"
+status = "done"
+depends = []
+
+[[tasks]]
+id = "typed-priority.1"
+feature = "typed-priority"
+title = "Complete fixed-level PriorityToken/TypedJoinHandle implementation and compile-pass/fail matrix"
+kind = "experiment"
+# Compile matrix 13/13、runtime39与独立verifier均完成。
+status = "done"
+depends = []
+
+[[tasks]]
+id = "priority-handle-safety.1"
+feature = "priority-handle-safety"
+title = "Design and model-check generation-tagged RawWaker data across slot reuse and wraparound"
+kind = "design"
+# Read-only audit/design finding completed; this status does not claim the implementation is verified.
+status = "done"
+depends = []
+
+[[tasks]]
+id = "priority-hostcall-e2e.2"
+feature = "priority-hostcall-e2e"
+title = "Promote the passing legacy IO gate into canonical coverage and run opt-in reserved-credit saturation on a real GPU"
+kind = "experiment"
+# Canonical trace与opt-in reserved-credit composed GPU gate均完成。
+status = "done"
+depends = ["priority-hostcall-e2e.1"]
+
+[[tasks]]
+id = "typed-priority.2"
+feature = "typed-priority"
+title = "Verify typed join Ready/Pending/cancel/shutdown/exactly-once completion on real GPU"
+kind = "experiment"
+status = "done"
+depends = ["typed-priority.1", "priority-handle-safety.1"]
+
+[[tasks]]
+id = "priority-hostcall-e2e.3"
+feature = "priority-hostcall-e2e"
+title = "Integrate typed task metadata through reserved hostcall request and completion round-trip"
+kind = "experiment"
+# Findings文件priority-hostcall-e2e.3a-c644.md是本task的v3 ownership子阶段映射。
+status = "done"
+depends = ["typed-priority.2", "priority-hostcall-e2e.2"]
+
+[[tasks]]
+id = "priority-handle-safety.2"
+feature = "priority-handle-safety"
+title = "Implement generation-safe RawWaker and queued effective-priority relocation/deferred-result contract"
+kind = "experiment"
+# Host/model/NVPTX与final real-GPU generation/lifetime evidence均完成。
+status = "done"
+depends = ["priority-handle-safety.1"]
+
+[[tasks]]
+id = "priority-handle-safety.3"
+feature = "priority-handle-safety"
+title = "Run multi-block stale-waker/generation reuse and typed shutdown lifetime litmus on a real GPU"
+kind = "experiment"
+status = "done"
+depends = ["priority-handle-safety.2", "typed-priority.2"]
+
+[[tasks]]
+id = "typed-priority.3"
+feature = "typed-priority"
+title = "Investigate PriML-style typed channel/CV dependencies and define the safe API boundary"
+kind = "investigation"
+status = "pending"
+depends = ["typed-priority.2"]
+
+[[tasks]]
+id = "priority-progress-model.1"
+feature = "priority-progress-model"
+title = "Specify GPU cooperative priority DAG/dispatch model and explicit progress assumptions"
+kind = "design"
+status = "pending"
+depends = ["priority-handle-safety.1"]
+
+[[tasks]]
+id = "priority-progress-model.2"
+feature = "priority-progress-model"
+title = "Model-test 8H:4N:1L service bounds and multi-warp queue/wake/shutdown schedules"
+kind = "experiment"
+status = "pending"
+depends = ["priority-progress-model.1", "priority-handle-safety.2"]
+
+[[tasks]]
+id = "priority-progress-model.3"
+feature = "priority-progress-model"
+title = "Run adversarial multi-warp GPU stress plus bounded non-yielding telemetry negative"
+kind = "experiment"
+status = "pending"
+depends = ["priority-progress-model.2", "priority-hostcall-e2e.3"]
+
 # ---
 # Brainstorms (last 3 — older → archive/)
 # ---
@@ -918,3 +1095,22 @@ features_parked = []
 features_completed = []
 stories_completed = []
 key_insight = "Current Winograd achieves 1.5-5.5% of peak because each thread serializes C_in with zero data reuse. The fix is NOT a bigger tile (F(4x4)) — it's restructuring the element-wise multiply as 16 batched GEMMs via cuBLAS. For each Winograd position, compute C_out x n_tiles = (C_out x C_in) @ (C_in x n_tiles). This converts per-tile serial work into GPU-wide parallel GEMM, which is exactly what cuBLAS excels at. F(4x4) is secondary — investigate during design, but the architectural change to batched GEMM is the primary lever."
+
+[[brainstorms]]
+seq = 135
+at_cycle = 644
+trigger = "User-requested deep brainstorm after priority executor/hostcall/obstacle work landed outside the tracked story hierarchy."
+level = "deep"
+key_insight = "Priority belongs to invisible-exec as a cross-boundary responsive-execution contract. The fixed-level executor, obstacle dispatch semantics and an independent correctly-routed legacy hostcall E2E are GPU-verified; canonical harness routing/lifetime, opt-in reserve saturation, typed joins, stale-waker generation and GPU-specific fairness remain gates. PriML can guide typed dependencies and cost reasoning, while its CPU scheduling theorems and VectorWare portable-SIMD data plane cannot be claimed by direct transfer."
+new_tasks_spawned = [
+    "priority-hostcall-e2e.1", "typed-priority.1", "priority-handle-safety.1",
+    "priority-hostcall-e2e.2", "typed-priority.2", "priority-hostcall-e2e.3",
+    "priority-handle-safety.2", "typed-priority.3",
+    "priority-progress-model.1", "priority-progress-model.2", "priority-progress-model.3",
+]
+new_features_spawned = ["typed-priority", "priority-hostcall-e2e", "priority-handle-safety", "priority-progress-model"]
+new_stories_spawned = ["responsive-execution"]
+features_parked = []
+features_completed = []
+stories_completed = []
+stories_reopened = []

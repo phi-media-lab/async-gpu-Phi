@@ -495,7 +495,7 @@ pub(crate) fn run_showcase_test(dev: Arc<CudaDevice>) -> Result<()> {
     });
 
     let ptx = cudarc::nvrtc::Ptx::from_src(crate::STD_BUILD_TEST_PTX);
-    let _ = dev.load_ptx(ptx, "std_test", &["showcase_kernel"]);
+    dev.load_ptx(ptx, "std_test", &["showcase_kernel"])?;
     let f = dev
         .get_func("std_test", "showcase_kernel")
         .ok_or(GpuHostError::KernelNotFound("showcase_kernel"))?;
@@ -597,7 +597,7 @@ pub(crate) fn run_multi_block_async_test(dev: Arc<CudaDevice>) -> Result<()> {
     });
 
     let ptx = cudarc::nvrtc::Ptx::from_src(crate::ASYNC_HOSTCALL_PTX);
-    let _ = dev.load_ptx(ptx, "multi_block_async", &["multi_block_async_kernel"]);
+    dev.load_ptx(ptx, "multi_block_async", &["multi_block_async_kernel"])?;
     let f = dev
         .get_func("multi_block_async", "multi_block_async_kernel")
         .ok_or(GpuHostError::KernelNotFound("multi_block_async_kernel"))?;
@@ -682,8 +682,8 @@ pub(crate) fn run_error_propagation_test(dev: Arc<CudaDevice>) -> Result<()> {
         hc_buf_listener.listen(|_msg| {});
     });
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "error_test", &["error_propagation_test"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_IO_PTX);
+    dev.load_ptx(ptx, "error_test", &["error_propagation_test"])?;
     let f = dev
         .get_func("error_test", "error_propagation_test")
         .ok_or(GpuHostError::KernelNotFound("error_propagation_test"))?;
@@ -763,7 +763,7 @@ pub(crate) fn run_println_direct_test(dev: Arc<CudaDevice>) -> Result<()> {
     });
 
     let ptx = cudarc::nvrtc::Ptx::from_src(crate::STD_BUILD_TEST_PTX);
-    let _ = dev.load_ptx(ptx, "println_test", &["println_direct_test_kernel"]);
+    dev.load_ptx(ptx, "println_test", &["println_direct_test_kernel"])?;
     let f = dev
         .get_func("println_test", "println_direct_test_kernel")
         .ok_or(GpuHostError::KernelNotFound("println_direct_test_kernel"))?;
@@ -834,7 +834,7 @@ pub(crate) fn run_slab_dealloc_test(dev: Arc<CudaDevice>) -> Result<()> {
     let (result_host_ptr, result_dev_ptr) = unsafe { alloc_mapped_result_array(&dev, 2)? };
 
     let ptx = cudarc::nvrtc::Ptx::from_src(crate::STD_BUILD_TEST_PTX);
-    let _ = dev.load_ptx(ptx, "slab_test", &["slab_dealloc_test_kernel"]);
+    dev.load_ptx(ptx, "slab_test", &["slab_dealloc_test_kernel"])?;
     let f = dev
         .get_func("slab_test", "slab_dealloc_test_kernel")
         .ok_or(GpuHostError::KernelNotFound("slab_dealloc_test_kernel"))?;
@@ -880,7 +880,7 @@ pub(crate) fn run_slab_concurrent_test(dev: Arc<CudaDevice>) -> Result<()> {
         unsafe { alloc_mapped_result_array(&dev, num_threads as usize)? };
 
     let ptx = cudarc::nvrtc::Ptx::from_src(crate::STD_BUILD_TEST_PTX);
-    let _ = dev.load_ptx(ptx, "slab_concurrent", &["slab_concurrent_test_kernel"]);
+    dev.load_ptx(ptx, "slab_concurrent", &["slab_concurrent_test_kernel"])?;
     let f = dev
         .get_func("slab_concurrent", "slab_concurrent_test_kernel")
         .ok_or(GpuHostError::KernelNotFound("slab_concurrent_test_kernel"))?;
@@ -939,6 +939,13 @@ pub(crate) fn run_executor_demo_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Executor Demo Test (executor-impl.4) ---");
     println!("  Spawns 8 async tasks: 4 WriteValueFuture + 4 CounterFuture.");
 
+    crate::kernel_routes::load_kernel(
+        &dev,
+        crate::kernel_routes::KernelModule::Io,
+        "kernel_executor",
+        &["executor_demo"],
+    )?;
+
     // Allocate mapped memory for the GpuExecutor (~136KB)
     // The executor is big because of 256 TaskSlots × 528 bytes each.
     let executor_size = 256 * 1024; // 256KB — generous
@@ -947,8 +954,6 @@ pub(crate) fn run_executor_demo_test(dev: Arc<CudaDevice>) -> Result<()> {
     // Allocate results: 16 u32
     let (results_host_ptr, results_dev_ptr) = unsafe { alloc_mapped_result_array(&dev, 16)? };
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel_executor", &["executor_demo"]);
     let f = dev
         .get_func("kernel_executor", "executor_demo")
         .ok_or(GpuHostError::KernelNotFound("executor_demo"))?;
@@ -1062,6 +1067,13 @@ pub(crate) fn run_channel_oneshot_demo_test(dev: Arc<CudaDevice>) -> Result<()> 
     println!("\n--- Channel Oneshot Demo Test (channel-oneshot.3) ---");
     println!("  Spawns 4 producer-consumer pairs using oneshot channels.");
 
+    crate::kernel_routes::load_kernel(
+        &dev,
+        crate::kernel_routes::KernelModule::Io,
+        "kernel_channel",
+        &["channel_oneshot_demo"],
+    )?;
+
     // Allocate mapped memory: executor + 4 OneshotSlot<u32> (~16 bytes each)
     let executor_size = 256 * 1024 + 256; // 256KB for executor + extra for slots
     let (exec_host_ptr, exec_dev_ptr) = unsafe { alloc_mapped_bytes(&dev, executor_size)? };
@@ -1069,8 +1081,6 @@ pub(crate) fn run_channel_oneshot_demo_test(dev: Arc<CudaDevice>) -> Result<()> 
     // Allocate results: 16 u32
     let (results_host_ptr, results_dev_ptr) = unsafe { alloc_mapped_result_array(&dev, 16)? };
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel_channel", &["channel_oneshot_demo"]);
     let f = dev
         .get_func("kernel_channel", "channel_oneshot_demo")
         .ok_or(GpuHostError::KernelNotFound("channel_oneshot_demo"))?;
@@ -1169,6 +1179,13 @@ pub(crate) fn run_channel_oneshot_demo_test(dev: Arc<CudaDevice>) -> Result<()> 
 pub(crate) fn run_compute_pipeline_demo_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Compute Pipeline Demo: GPU-autonomous multi-stage compute ---");
 
+    crate::kernel_routes::load_kernel(
+        &dev,
+        crate::kernel_routes::KernelModule::Compute,
+        "compute_demo",
+        &["compute_pipeline_demo"],
+    )?;
+
     // Allocate output (32 floats) + status (4 u32s) in mapped memory
     let (output_host_ptr, output_dev_ptr) = unsafe { alloc_mapped_result_array(&dev, 32)? };
     // Status: [iterations, nanos_lo, nanos_hi, done_flag]
@@ -1181,8 +1198,6 @@ pub(crate) fn run_compute_pipeline_demo_test(dev: Arc<CudaDevice>) -> Result<()>
         }
     }
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "compute_demo", &["compute_pipeline_demo"]);
     let f = dev
         .get_func("compute_demo", "compute_pipeline_demo")
         .ok_or(GpuHostError::KernelNotFound("compute_pipeline_demo"))?;
@@ -1256,9 +1271,9 @@ pub(crate) fn run_compute_pipeline_demo_test(dev: Arc<CudaDevice>) -> Result<()>
 pub(crate) fn run_compute_benchmark_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Compute Benchmark: single-launch vs multi-launch ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(
-        ptx,
+    crate::kernel_routes::load_kernel(
+        &dev,
+        crate::kernel_routes::KernelModule::Compute,
         "compute_bench",
         &[
             "compute_pipeline_demo",
@@ -1266,7 +1281,7 @@ pub(crate) fn run_compute_benchmark_test(dev: Arc<CudaDevice>) -> Result<()> {
             "bench_stage_gelu",
             "bench_stage_reduce",
         ],
-    );
+    )?;
 
     let warp_cfg = LaunchConfig {
         grid_dim: (1, 1, 1),
@@ -1446,6 +1461,13 @@ pub(crate) fn run_channel_mpsc_demo_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Channel MPSC Demo Test (channel-mpsc.2) ---");
     println!("  Spawns 3 producers + 1 consumer using MPSC channel.");
 
+    crate::kernel_routes::load_kernel(
+        &dev,
+        crate::kernel_routes::KernelModule::Io,
+        "kernel_mpsc",
+        &["channel_mpsc_demo"],
+    )?;
+
     // Allocate mapped memory: executor + MpscChannel<u32, 16>
     // MpscChannel<u32, 16> is small (~256 bytes), executor is ~136KB
     let executor_size = 256 * 1024 + 1024; // 256KB for executor + extra for channel
@@ -1454,8 +1476,6 @@ pub(crate) fn run_channel_mpsc_demo_test(dev: Arc<CudaDevice>) -> Result<()> {
     // Allocate results: 8 u32
     let (results_host_ptr, results_dev_ptr) = unsafe { alloc_mapped_result_array(&dev, 8)? };
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel_mpsc", &["channel_mpsc_demo"]);
     let f = dev
         .get_func("kernel_mpsc", "channel_mpsc_demo")
         .ok_or(GpuHostError::KernelNotFound("channel_mpsc_demo"))?;
@@ -1559,7 +1579,7 @@ pub(crate) async fn run_tokio_bridge_demo_test(
     println!("  Launches hostcall_print_hello via GpuTask async API.");
 
     let rt = AsyncGpuRuntime::new(0)?;
-    rt.load_ptx(crate::KERNEL_PTX, "kernel", &["hostcall_print_hello"])?;
+    rt.load_ptx(crate::KERNEL_IO_PTX, "kernel", &["hostcall_print_hello"])?;
 
     let mut task = GpuTask::new(&rt, 4)?;
 

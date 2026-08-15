@@ -12,8 +12,8 @@ use gpu_host::mapped_mem::{alloc_mapped_result_array, free_mapped_mem};
 pub(crate) fn run_layer_norm_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- LayerNorm test (transformer-layer.1) ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "layer_norm", &["layer_norm"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(ptx, "layer_norm", &["layer_norm"])?;
     let f = dev
         .get_func("layer_norm", "layer_norm")
         .ok_or(GpuHostError::KernelNotFound("layer_norm"))?;
@@ -128,8 +128,8 @@ pub(crate) fn run_layer_norm_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_gelu_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- GELU test (transformer-layer.2) ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "gelu_forward", &["gelu_forward"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(ptx, "gelu_forward", &["gelu_forward"])?;
     let f = dev
         .get_func("gelu_forward", "gelu_forward")
         .ok_or(GpuHostError::KernelNotFound("gelu_forward"))?;
@@ -209,8 +209,8 @@ pub(crate) fn run_gelu_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_attention_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Attention test (transformer-layer.3) ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "attention_head", &["attention_head"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(ptx, "attention_head", &["attention_head"])?;
     let f = dev
         .get_func("attention_head", "attention_head")
         .ok_or(GpuHostError::KernelNotFound("attention_head"))?;
@@ -443,8 +443,8 @@ pub(crate) fn run_attention_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_flash_attention_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- FlashAttention test (attention-scale.3) ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "flash_attn", &["flash_attention"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(ptx, "flash_attn", &["flash_attention"])?;
     let f = dev
         .get_func("flash_attn", "flash_attention")
         .ok_or(GpuHostError::KernelNotFound("flash_attention"))?;
@@ -582,8 +582,8 @@ pub(crate) fn run_flash_attention_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_flash_attention_scale_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- FlashAttention scaling test (attention-scale.4) ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "flash_attn_scale", &["flash_attention"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(ptx, "flash_attn_scale", &["flash_attention"])?;
     let f = dev
         .get_func("flash_attn_scale", "flash_attention")
         .ok_or(GpuHostError::KernelNotFound("flash_attention"))?;
@@ -739,8 +739,8 @@ pub(crate) fn run_flash_attention_scale_test(dev: Arc<CudaDevice>) -> Result<()>
 pub(crate) fn run_embedding_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Embedding lookup test (full-inference.1) ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "embedding", &["embedding_lookup"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(ptx, "embedding", &["embedding_lookup"])?;
     let f = dev
         .get_func("embedding", "embedding_lookup")
         .ok_or(GpuHostError::KernelNotFound("embedding_lookup"))?;
@@ -837,12 +837,12 @@ pub(crate) fn run_embedding_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_ffn_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- FFN block test (transformer-layer.4) ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(
         ptx,
         "ffn_kernels",
         &["full_gemm", "bias_add", "gelu_forward", "f32_to_f16x2_pack"],
-    );
+    )?;
 
     let f_gemm = dev
         .get_func("ffn_kernels", "full_gemm")
@@ -1209,8 +1209,8 @@ pub(crate) fn run_ffn_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_transformer_layer_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Transformer layer test (transformer-layer.6) ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(
         ptx,
         "transformer",
         &[
@@ -1224,7 +1224,7 @@ pub(crate) fn run_transformer_layer_test(dev: Arc<CudaDevice>) -> Result<()> {
             "concat_heads",
             "elementwise_add",
         ],
-    );
+    )?;
 
     macro_rules! get_fn {
         ($name:expr) => {
@@ -1963,8 +1963,8 @@ pub(crate) fn run_transformer_layer_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_kv_cache_attention_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- KV cache attention test (kv-cache.2) ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kv_cache", &["flash_attention", "flash_attention_kv"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(ptx, "kv_cache", &["flash_attention", "flash_attention_kv"])?;
     let f_attn = dev
         .get_func("kv_cache", "flash_attention")
         .ok_or(GpuHostError::KernelNotFound("flash_attention"))?;
@@ -2252,7 +2252,7 @@ pub(crate) fn run_elementwise_benchmark(dev: Arc<CudaDevice>) -> Result<()> {
     println!("  GTX 1660: peak memory bandwidth = 192 GB/s, 5 TFLOPS FP32");
 
     let registry = std::sync::Arc::new(
-        KernelRegistry::new(dev.clone(), crate::KERNEL_PTX).map_err(|e| {
+        KernelRegistry::new(dev.clone(), crate::KERNEL_COMPUTE_PTX).map_err(|e| {
             GpuHostError::Verification {
                 test: "elem_bench",
                 detail: format!("{e}"),

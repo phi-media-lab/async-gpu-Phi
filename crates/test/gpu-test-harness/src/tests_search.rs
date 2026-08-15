@@ -13,8 +13,8 @@ use gpu_host::mapped_mem::{alloc_mapped_result_array, free_mapped_mem};
 pub(crate) fn run_f32_math_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- f32 Math Validation (ml-workload.1) ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["f32_math_test"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(ptx, "kernel", &["f32_math_test"])?;
     let f = dev
         .get_func("kernel", "f32_math_test")
         .ok_or(GpuHostError::KernelNotFound("f32_math_test"))?;
@@ -127,7 +127,7 @@ pub(crate) fn run_vector_search_test(dev: Arc<CudaDevice>) -> Result<()> {
     cpu_scores.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
     println!(
         "  CPU reference top-3: {:?}",
-        &cpu_scores[..3]
+        cpu_scores[..3]
             .iter()
             .map(|(id, s)| format!("id={id} score={s:.4}"))
             .collect::<Vec<_>>()
@@ -149,8 +149,8 @@ pub(crate) fn run_vector_search_test(dev: Arc<CudaDevice>) -> Result<()> {
         });
     });
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["vector_search_pipeline"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(ptx, "kernel", &["vector_search_pipeline"])?;
     let f = dev
         .get_func("kernel", "vector_search_pipeline")
         .ok_or(GpuHostError::KernelNotFound("vector_search_pipeline"))?;
@@ -312,8 +312,8 @@ pub(crate) fn run_batch_search_test(dev: Arc<CudaDevice>) -> Result<()> {
         });
     });
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["batch_search_pipeline"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(ptx, "kernel", &["batch_search_pipeline"])?;
     let f = dev
         .get_func("kernel", "batch_search_pipeline")
         .ok_or(GpuHostError::KernelNotFound("batch_search_pipeline"))?;
@@ -402,8 +402,8 @@ pub(crate) fn run_batch_search_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_mma_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Tensor Core MMA Test (gpu-compute.3) ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "mma_test", &["test_mma_m16n8k16"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(ptx, "mma_test", &["test_mma_m16n8k16"])?;
     let f = dev
         .get_func("mma_test", "test_mma_m16n8k16")
         .ok_or(GpuHostError::KernelNotFound("test_mma_m16n8k16"))?;
@@ -482,8 +482,8 @@ pub(crate) fn run_mma_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_shared_memory_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Shared Memory + bar.sync Test (gpu-compute.4) ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "smem_test", &["test_shared_memory"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(ptx, "smem_test", &["test_shared_memory"])?;
     let f = dev
         .get_func("smem_test", "test_shared_memory")
         .ok_or(GpuHostError::KernelNotFound("test_shared_memory"))?;
@@ -550,8 +550,8 @@ pub(crate) fn run_shared_memory_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_mma_mapped_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- MMA Fragment Mapping Test (gpu-pipeline.1) ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "mma_mapped", &["test_mma_mapped"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(ptx, "mma_mapped", &["test_mma_mapped"])?;
     let f = dev
         .get_func("mma_mapped", "test_mma_mapped")
         .ok_or(GpuHostError::KernelNotFound("test_mma_mapped"))?;

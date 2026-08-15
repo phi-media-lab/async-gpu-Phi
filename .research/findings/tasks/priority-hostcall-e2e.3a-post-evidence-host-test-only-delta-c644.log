@@ -1,0 +1,40 @@
+# Post-evidence gpu-host source delta (cycle 644)
+
+CLASSIFICATION=test-only mechanical Clippy cleanup; no production/GPU semantic delta
+FILE=crates/core/gpu-host/src/hostcall.rs
+PRE_SHA256=ed37914088a09348d3ae69d379f8da079560cb10aca3a27502c50bba86ed4b58
+POST_SHA256=4a5d0fd2d1d9f6b61c2770a7af410bb0f69321b123394549245e68bdb2acc5f6
+PRE_SIZE_BYTES=175906
+POST_SIZE_BYTES=175852
+POST_MTIME=2026-08-15 07:44:26 +0800
+TEST_MODULE_START=#[cfg(test)] at line 3547
+HUNK_LINES_POST=4096,4153,4179,4203,4231,4281
+EDIT=remove redundant `(NAMESPACE_VALUE as u64)` casts after the protocol constant became u64
+PRODUCTION_DELTA=false
+PTX_DELTA=false
+
+The preserved pre-source snapshot has PRE_SHA256 above. The machine-direct
+candidate evidence also records the same pre-source hash. A unified comparison
+against the current source contains exactly these six replacements, all after
+the `#[cfg(test)] mod tests` boundary:
+
+```diff
+-        let task_id = ((composed_priority_schema::NAMESPACE_VALUE as u64) << 32)
++        let task_id = (composed_priority_schema::NAMESPACE_VALUE << 32)
+```
+
+The identical replacement occurs in exactly these six `#[test]` functions:
+
+1. `priority_echo_records_live_identity_and_shared_reserve_provenance`
+2. `priority_echo_corruption_hook_is_explicit_and_oracle_visible`
+3. `priority_echo_rejects_legacy_unversioned_identity`
+4. `priority_echo_forced_error_is_recorded_independently`
+5. `cancelled_priority_echo_is_recorded_and_delay_does_not_leak_to_reuse`
+6. `cancellation_between_claim_and_dispatch_is_recorded_before_reclaim`
+
+Because Cargo compiles `gpu-host` as a normal dependency for
+`cargo run -p gpu-test-harness --bin gpu-tests`, this `#[cfg(test)]` module is not
+part of the production host listener/handler linked into the GPU runs. The edit
+also cannot affect `kernel_io.ptx`, which is produced by the device kernel crate.
+It therefore does not invalidate the earlier final GPU transcripts; it only
+closes a later host test-target Clippy warning.

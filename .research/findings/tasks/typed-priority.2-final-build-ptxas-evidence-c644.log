@@ -1,0 +1,52 @@
+Final helper-bearing IO PTX build and static validation evidence
+Recorded: 2026-08-15 Asia/Shanghai
+Build command: cd /home/fbsh/async-gpu && ./scripts/build-kernels.sh io
+PTXAS command: /usr/local/cuda/bin/ptxas -arch=sm_89 crates/core/gpu-host/kernel_io.ptx -o <validated mktemp cubin>
+PTX SHA-256: eefd4d97ce692a92f79b51b2eb5452ac76fc7c8f53519bfee16bf9bb52ff6e23
+PTX size: 4414346 bytes; mtime: 2026-08-15 05:49:15.034335909 +0800
+
+--- BEGIN BUILD STDOUT+STDERR ---
+==> Building kernel crates: io (mode: dev)
+Using toolchain: +nightly-2026-06-03
+(skipping ptxas — dev mode, PTX only)
+
+=== Step 1: Building PTX for 1 crate(s) ===
+
+--- Building gpu-kernel-io ---
+   Compiling gpu-protocol v0.1.0 (/home/fbsh/async-gpu/crates/core/gpu-protocol)
+   Compiling gpu-runtime v0.1.0 (/home/fbsh/async-gpu/crates/core/gpu-runtime)
+   Compiling gpu-libc v0.1.0 (/home/fbsh/async-gpu/crates/core/gpu-libc)
+   Compiling gpu-kernel-core v0.1.0 (/home/fbsh/async-gpu/crates/kernel/gpu-kernel-core)
+warning: linker stdout: ␛[2m2026-08-14T21:48:35.133825Z␛[0m ␛[34mDEBUG␛[0m ␛[2mllvm_bitcode_linker::linker␛[0m␛[2m:␛[0m new session created ␛[3mtarget␛[0m␛[2m=␛[0mnvptx64-nvidia-cuda ␛[3mcpu␛[0m␛[2m=␛[0mSome("sm_75") ␛[3mfeature␛[0m␛[2m=␛[0mSome("+ptx70,+ptx70,+ptx71,+ptx72,+ptx73,+ptx74,+ptx75,+ptx76,+ptx77,+ptx78") ␛[3mout_path␛[0m␛[2m=␛[0m"/home/fbsh/async-gpu/crates/kernel/gpu-kernel-io/target/nvptx64-nvidia-cuda/release/deps/gpu_kernel_core.ptx"
+warning: `gpu-kernel-core` (lib) generated 2 warnings (1 duplicate)
+   Compiling gpu-kernel-io v0.1.0 (/home/fbsh/async-gpu/crates/kernel/gpu-kernel-io)
+warning: linker stdout: ␛[2m2026-08-14T21:48:54.502486Z␛[0m ␛[34mDEBUG␛[0m ␛[2mllvm_bitcode_linker::linker␛[0m␛[2m:␛[0m new session created ␛[3mtarget␛[0m␛[2m=␛[0mnvptx64-nvidia-cuda ␛[3mcpu␛[0m␛[2m=␛[0mSome("sm_75") ␛[3mfeature␛[0m␛[2m=␛[0mSome("+ptx70,+ptx70,+ptx71,+ptx72,+ptx73,+ptx74,+ptx75,+ptx76,+ptx77,+ptx78") ␛[3mout_path␛[0m␛[2m=␛[0m"/home/fbsh/async-gpu/crates/kernel/gpu-kernel-io/target/nvptx64-nvidia-cuda/release/deps/gpu_kernel_io.ptx"
+warning: `gpu-kernel-io` (lib) generated 3 warnings (1 duplicate)
+    Finished `release` profile [optimized] target(s) in 41.33s
+PTX ready: 4.3M
+
+=== Step 2: Copying PTX files to gpu-host ===
+  kernel_io.ptx (4.3M)
+
+=== Step 3: Skipped (dev mode — no cubin compilation) ===
+  Host loader will use PTX JIT at runtime.
+  Use --prod to pre-compile cubins with ptxas.
+
+=== All 1 kernel(s) built successfully ===
+
+PTX files:
+BUILD_SECONDS=41.39 EXIT=0
+  kernel_io.ptx            4.3M
+--- END BUILD STDOUT+STDERR ---
+
+--- BEGIN ROUTE/PTXAS STDOUT+STDERR ---
+composed_priority_hostcall_e2e=1
+priority_echo_timeout_reuse=1
+obstacle_event_priority_stress=1
+priority_handle_safety_stress=1
+trace_multithread_test=1
+trace_assert_test=1
+PTXAS_SECONDS=181.91 EXIT=0
+CUBIN_SIZE=20401312
+--- END ROUTE/PTXAS STDOUT+STDERR ---
+

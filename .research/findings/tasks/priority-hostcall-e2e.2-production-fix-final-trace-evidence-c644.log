@@ -1,0 +1,96 @@
+Production-fix final canonical trace route regression evidence
+Recorded: 2026-08-15 Asia/Shanghai
+Command: ssh nv 'cd /home/fbsh/async-gpu && /usr/bin/time -f "TOTAL_SECONDS=%e EXIT=%x" timeout --signal=TERM --kill-after=10s 120s env NO_COLOR=1 CARGO_TERM_COLOR=never AUTO_BUILD_KERNEL=0 ONLY_TEST=trace cargo run -p gpu-test-harness --bin gpu-tests'
+Device: NVIDIA GeForce RTX 4070; driver 595.84; compute capability 8.9
+Executor source SHA-256: de59ac88a7370163f0e3efde108a90301416eabc9f94de9ae725c1398652d717
+IO PTX SHA-256: 51a9376c3e1cd842bd5801704c8da64277dce2c281628b9311bb79f7fcca9a16
+Capture provenance: direct exec output passed to apply_patch without UI copy or SSH reread.
+Note: listener-rendered ANSI color bytes are retained verbatim in this raw transcript.
+
+--- BEGIN RAW STDOUT+STDERR ---
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.04s
+     Running `target/debug/gpu-tests`
+=== GPU Kernel Execution Test ===
+
+CUDA device initialized successfully
+ONLY_TEST=trace: route plan=io
+ONLY_TEST=trace: explicit PTX route=io symbols=["trace_multithread_test", "trace_assert_test"]
+
+--- Trace multi-thread test (32 threads) ---
+[32m[GPU INFO][0m B0.T0 @3304458126832: trace from T0
+[32m[GPU INFO][0m B0.T1 @3304458176372: trace from T1
+[32m[GPU INFO][0m B0.T2 @3304458230331: trace from T2
+[32m[GPU INFO][0m B0.T3 @3304458283728: trace from T3
+[32m[GPU INFO][0m B0.T4 @3304458336352: trace from T4
+[32m[GPU INFO][0m B0.T5 @3304458388669: trace from T5
+[32m[GPU INFO][0m B0.T6 @3304458441884: trace from T6
+[32m[GPU INFO][0m B0.T7 @3304458491859: trace from T7
+[32m[GPU INFO][0m B0.T8 @3304458553608: trace from T8
+[32m[GPU INFO][0m B0.T9 @3304458602482: trace from T9
+[32m[GPU INFO][0m B0.T10 @3304458649047: trace from T10
+[32m[GPU INFO][0m B0.T11 @3304458693386: trace from T11
+[32m[GPU INFO][0m B0.T12 @3304458739132: trace from T12
+[32m[GPU INFO][0m B0.T13 @3304458781892: trace from T13
+[32m[GPU INFO][0m B0.T14 @3304458822810: trace from T14  Launching trace_multithread_test (1 block × 32 threads)...
+
+[32m[GPU INFO][0m B0.T15 @3304458864861: trace from T15
+[32m[GPU INFO][0m B0.T16 @3304458918056: trace from T16
+[32m[GPU INFO][0m B0.T17 @3304458956014: trace from T17
+[32m[GPU INFO][0m B0.T18 @3304458994583: trace from T18
+[32m[GPU INFO][0m B0.T19 @3304459033061: trace from T19
+[32m[GPU INFO][0m B0.T20 @3304459070264: trace from T20
+[32m[GPU INFO][0m B0.T21 @3304459107627: trace from T21
+[32m[GPU INFO][0m B0.T22 @3304459144250: trace from T22
+[32m[GPU INFO][0m B0.T23 @3304459177351: trace from T23
+[32m[GPU INFO][0m B0.T24 @3304459221821: trace from T24
+[32m[GPU INFO][0m B0.T25 @3304459266004: trace from T25
+[32m[GPU INFO][0m B0.T26 @3304459314719: trace from T26
+[32m[GPU INFO][0m B0.T27 @3304459349672: trace from T27
+[32m[GPU INFO][0m B0.T28 @3304459384373: trace from T28
+[32m[GPU INFO][0m B0.T29 @3304459430598: trace from T29
+[32m[GPU INFO][0m B0.T30 @3304459476609: trace from T30
+[32m[GPU INFO][0m B0.T31 @3304459513087: trace from T31
+  Kernel completed.
+  Results: 32/32 threads completed trace events
+  trace_multithread_test: PASSED!
+
+--- Trace + assert test (32 threads, assert true) ---
+[36m[GPU DEBUG][0m B0.T0 @3304498573579: assert test T0
+[36m[GPU DEBUG][0m B0.T1 @3304498625724: assert test T1
+[36m[GPU DEBUG][0m B0.T3 @3304498739145: assert test T3
+[36m[GPU DEBUG][0m B0.T2 @3304498682538: assert test T2
+[36m[GPU DEBUG][0m B0.T4 @3304498798080: assert test T4
+[36m[GPU DEBUG][0m B0.T6 @3304498933122: assert test T6
+[36m[GPU DEBUG][0m B0.T7 @3304498995692: assert test T7
+[36m[GPU DEBUG][0m B0.T8 @3304499067488: assert test T8
+[36m[GPU DEBUG][0m B0.T9 @3304499141574: assert test T9
+[36m[GPU DEBUG][0m B0.T10 @3304499225076: assert test T10
+[36m[GPU DEBUG][0m B0.T11 @3304499298809: assert test T11
+[36m[GPU DEBUG][0m B0.T5 @3304498858053: assert test T5
+[36m[GPU DEBUG][0m B0.T12 @3304499888768: assert test T12
+[36m[GPU DEBUG][0m B0.T13 @3304499930593: assert test T13
+[36m[GPU DEBUG][0m B0.T14 @3304499970225: assert test T14
+[36m[GPU DEBUG][0m B0.T15 @3304500011072: assert test T15
+[36m[GPU DEBUG][0m B0.T16 @3304500049368: assert test T16
+[36m[GPU DEBUG][0m B0.T17 @3304500087636: assert test T17
+[36m[GPU DEBUG][0m B0.T18 @3304500123816: assert test T18
+[36m[GPU DEBUG][0m B0.T19 @3304500159709: assert test T19
+[36m[GPU DEBUG][0m B0.T20 @3304500193066: assert test T20
+[36m[GPU DEBUG][0m B0.T21 @3304500226293: assert test T21
+[36m[GPU DEBUG][0m B0.T22 @3304500258142: assert test T22
+[36m[GPU DEBUG][0m B0.T23 @3304500287251: assert test T23
+[36m[GPU DEBUG][0m B0.T24 @3304500318080: assert test T24
+[36m[GPU DEBUG][0m B0.T25 @3304500348116: assert test T25
+[36m[GPU DEBUG][0m B0.T26 @3304500388339: assert test T26
+[36m[GPU DEBUG][0m B0.T27 @3304500428476: assert test T27
+[36m[GPU DEBUG][0m B0.T28 @3304500461087: assert test T28
+[36m[GPU DEBUG][0m B0.T29 @3304500505488: assert test T29
+[36m[GPU DEBUG][0m B0.T30 @3304500571193: assert test T30
+[36m[GPU DEBUG][0m B0.T31 @3304500609799: assert test T31
+  Launching trace_assert_test (1 block × 32 threads)...
+  Kernel completed (no trap — assert passed).
+  Results: 32/32 threads completed
+  trace_assert_test: PASSED!
+TOTAL_SECONDS=0.96 EXIT=0
+--- END RAW STDOUT+STDERR ---
+

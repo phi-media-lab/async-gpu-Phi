@@ -102,7 +102,7 @@ pub(crate) fn run_std_println_test(dev: Arc<CudaDevice>) -> Result<()> {
     });
 
     let ptx = cudarc::nvrtc::Ptx::from_src(crate::STD_BUILD_TEST_PTX);
-    let _ = dev.load_ptx(
+    dev.load_ptx(
         ptx,
         "std_test",
         &[
@@ -110,7 +110,7 @@ pub(crate) fn run_std_println_test(dev: Arc<CudaDevice>) -> Result<()> {
             "std_println_multi_kernel",
             "std_println_vec_kernel",
         ],
-    );
+    )?;
     let cfg = LaunchConfig {
         grid_dim: (1, 1, 1),
         block_dim: (1, 1, 1),
@@ -219,7 +219,7 @@ pub(crate) fn run_dynamic_alloc_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- product.1: Dynamic Allocation Stress Test ---");
 
     let ptx = cudarc::nvrtc::Ptx::from_src(crate::STD_BUILD_TEST_PTX);
-    let _ = dev.load_ptx(
+    dev.load_ptx(
         ptx,
         "std_test",
         &[
@@ -228,7 +228,7 @@ pub(crate) fn run_dynamic_alloc_test(dev: Arc<CudaDevice>) -> Result<()> {
             "std_dynamic_multi_vec_kernel",
             "std_dynamic_vec_capacity_kernel",
         ],
-    );
+    )?;
 
     let cfg = LaunchConfig {
         grid_dim: (1, 1, 1),
@@ -528,7 +528,7 @@ pub(crate) fn run_std_stdin_test(dev: Arc<CudaDevice>) -> Result<()> {
     });
 
     let ptx = cudarc::nvrtc::Ptx::from_src(crate::STD_BUILD_TEST_PTX);
-    let _ = dev.load_ptx(ptx, "std_test", &["std_stdin_kernel"]);
+    dev.load_ptx(ptx, "std_test", &["std_stdin_kernel"])?;
     let f = dev
         .get_func("std_test", "std_stdin_kernel")
         .ok_or(GpuHostError::KernelNotFound("std_stdin_kernel"))?;
@@ -789,8 +789,12 @@ pub(crate) fn run_std_stdin_readline_test(_dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_multithread_malloc_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- std-hardening.3: Multi-thread malloc (atomic bump) ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    dev.load_ptx(ptx, "alloc_test", &["test_multithread_malloc"])?;
+    crate::kernel_routes::load_kernel(
+        &dev,
+        crate::kernel_routes::KernelModule::Core,
+        "alloc_test",
+        &["test_multithread_malloc"],
+    )?;
 
     let num_threads: u32 = 32;
     let heap_size: u64 = 64 * 1024; // 64 KB heap
@@ -1213,7 +1217,7 @@ pub(crate) fn run_std_buffered_println_test(dev: Arc<CudaDevice>) -> Result<()> 
     });
 
     let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_STD_PTX);
-    let _ = dev.load_ptx(ptx, "kernel_std", &["std_buffered_println_test"]);
+    dev.load_ptx(ptx, "kernel_std", &["std_buffered_println_test"])?;
     let f = dev
         .get_func("kernel_std", "std_buffered_println_test")
         .ok_or(GpuHostError::KernelNotFound("std_buffered_println_test"))?;
@@ -1293,11 +1297,11 @@ pub(crate) fn run_std_sysroot_file_test(dev: Arc<CudaDevice>) -> Result<()> {
     });
 
     let ptx = cudarc::nvrtc::Ptx::from_src(crate::STD_BUILD_TEST_PTX);
-    let _ = dev.load_ptx(
+    dev.load_ptx(
         ptx,
         "std_test",
         &["std_file_write_kernel", "std_file_read_kernel"],
-    );
+    )?;
 
     let cfg = LaunchConfig {
         grid_dim: (1, 1, 1),

@@ -1399,7 +1399,11 @@ fn noop_waker() -> core::task::Waker {
 ///
 /// # Example
 /// ```no_run
-/// let result = unsafe { block_on(data_pipeline(buf)) };
+/// use core::future::ready;
+/// use gpu_runtime::std_future::block_on;
+///
+/// let result = unsafe { block_on(ready(7u32)) };
+/// assert_eq!(result, Some(7));
 /// ```
 #[inline(always)]
 pub unsafe fn block_on<F: Future>(future: F) -> Option<F::Output> {

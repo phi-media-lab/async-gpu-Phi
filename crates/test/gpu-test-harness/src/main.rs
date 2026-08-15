@@ -1,13 +1,18 @@
 #![allow(clippy::needless_range_loop)]
 mod bench_harness;
+mod composed_oracle;
+mod harness_support;
+mod kernel_routes;
 mod tests_basic;
 mod tests_benchmark;
 mod tests_cnn;
 mod tests_gemm;
 mod tests_hostcall;
 mod tests_inference;
+mod tests_obstacle;
 mod tests_par_iter;
 mod tests_pipeline;
+mod tests_priority_safety;
 mod tests_scaling;
 mod tests_search;
 mod tests_std;
@@ -19,14 +24,18 @@ use cudarc::driver::{CudaDevice, DevicePtr};
 use gpu_host::error::{GpuHostError, Result};
 use std::sync::Arc;
 
-// PTX constants re-exported from the library crate.
-const KERNEL_PTX: &str = gpu_host::ptx::KERNEL;
+// PTX constants re-exported from the library crate. Keep every canonical
+// module explicit: a generic compute alias previously hid IO/test misroutes.
+const KERNEL_CORE_PTX: &str = gpu_host::ptx::KERNEL_CORE;
+const KERNEL_COMPUTE_PTX: &str = gpu_host::ptx::KERNEL_COMPUTE;
 const EMBASSY_PTX: &str = gpu_host::ptx::EMBASSY_TEST;
 const ASYNC_HOSTCALL_PTX: &str = gpu_host::ptx::ASYNC_HOSTCALL_TEST;
 const STD_BUILD_TEST_PTX: &str = gpu_host::ptx::STD_BUILD_TEST;
 const ASYNC_PIPELINE_PTX: &str = gpu_host::ptx::ASYNC_PIPELINE_TEST;
 const MULTI_WARP_PTX: &str = gpu_host::ptx::MULTI_WARP_TEST;
-const KERNEL_STD_PTX: &str = gpu_host::ptx::KERNEL_STD;
+const KERNEL_IO_PTX: &str = gpu_host::ptx::KERNEL_IO;
+const KERNEL_TEST_PTX: &str = gpu_host::ptx::KERNEL_TEST;
+const KERNEL_STD_PTX: &str = KERNEL_TEST_PTX;
 
 fn main() -> Result<()> {
     println!("=== GPU Kernel Execution Test ===\n");
@@ -36,6 +45,18 @@ fn main() -> Result<()> {
 
     // Quick filter: ONLY_TEST=generation to skip to generation test
     if let Ok(only) = std::env::var("ONLY_TEST") {
+        kernel_routes::validate_build_feature(&only)?;
+        kernel_routes::validate_feature_gate(&only)?;
+        if let Some(plan) = kernel_routes::selector_plan_for(&only) {
+            println!("ONLY_TEST={only}: route plan={}", plan.name());
+        }
+        if let Some(route) = kernel_routes::route_for(&only) {
+            println!(
+                "ONLY_TEST={only}: explicit PTX route={} symbols={:?}",
+                route.module.name(),
+                route.symbols
+            );
+        }
         match only.as_str() {
             "generation" => {
                 tests_inference::run_generation_test(Arc::clone(&dev))?;
@@ -170,6 +191,18 @@ fn main() -> Result<()> {
             }
             "executor" => {
                 tests_scaling::run_executor_demo_test(Arc::clone(&dev))?;
+                return Ok(());
+            }
+            "obstacle" | "obstacle_stress" => {
+                tests_obstacle::run_obstacle_event_stress(Arc::clone(&dev))?;
+                return Ok(());
+            }
+            "composed_priority" | "priority_e2e" => {
+                tests_obstacle::run_composed_priority_e2e(Arc::clone(&dev))?;
+                return Ok(());
+            }
+            "priority_safety" => {
+                tests_priority_safety::run_priority_handle_safety_stress(Arc::clone(&dev))?;
                 return Ok(());
             }
             "channel" | "channel_oneshot" => {
@@ -480,7 +513,12 @@ fn main() -> Result<()> {
                 run_generator_tests()?;
                 return Ok(());
             }
-            _ => println!("Unknown ONLY_TEST={only}, running all tests"),
+            _ => {
+                return Err(GpuHostError::Verification {
+                    test: "only_test",
+                    detail: format!("unknown or unavailable ONLY_TEST selector `{only}`"),
+                });
+            }
         }
     }
 
@@ -809,7 +847,7 @@ fn run_fusion_benchmark(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Fused LayerNorm+Residual Benchmark (perf-fusion) ---");
 
     let registry = std::sync::Arc::new(
-        KernelRegistry::new(dev.clone(), crate::KERNEL_PTX).map_err(|e| {
+        KernelRegistry::new(dev.clone(), crate::KERNEL_COMPUTE_PTX).map_err(|e| {
             GpuHostError::Verification {
                 test: "fusion",
                 detail: format!("{e}"),
@@ -1438,21 +1476,17 @@ fn run_thread_spawn_test(dev: Arc<CudaDevice>) -> Result<()> {
 
     println!("\n--- thread::spawn test (std-thread-gpu) ---");
 
-    let ptx1 = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    match dev.load_ptx(ptx1, "thread_test1", &["thread_spawn_test"]) {
-        Ok(_) => println!("  PTX loaded (test1)"),
-        Err(e) => println!("  PTX load error: {e:?}"),
-    }
-    let ptx2 = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    match dev.load_ptx(ptx2, "thread_test2", &["thread_reuse_test"]) {
-        Ok(_) => println!("  PTX loaded (test2)"),
-        Err(e) => println!("  PTX load error: {e:?}"),
-    }
+    kernel_routes::load_kernel(
+        &dev,
+        kernel_routes::KernelModule::Test,
+        "thread_tests",
+        &["thread_spawn_test", "thread_reuse_test"],
+    )?;
 
     // --- Test 1: basic spawn + join ---
     println!("  Test 1: spawn 2 threads, join results...");
     let f = dev
-        .get_func("thread_test1", "thread_spawn_test")
+        .get_func("thread_tests", "thread_spawn_test")
         .ok_or(GpuHostError::KernelNotFound("thread_spawn_test"))?;
 
     let mut result_dev: cudarc::driver::CudaSlice<u32> = dev.alloc_zeros::<u32>(4)?;
@@ -1484,7 +1518,7 @@ fn run_thread_spawn_test(dev: Arc<CudaDevice>) -> Result<()> {
     // --- Test 2: spawn + reuse (4 tasks on 3 warps) ---
     println!("  Test 2: spawn 4 tasks with reuse...");
     let f2 = dev
-        .get_func("thread_test2", "thread_reuse_test")
+        .get_func("thread_tests", "thread_reuse_test")
         .ok_or(GpuHostError::KernelNotFound("thread_reuse_test"))?;
 
     let mut result2_dev: cudarc::driver::CudaSlice<u32> = dev.alloc_zeros::<u32>(5)?;

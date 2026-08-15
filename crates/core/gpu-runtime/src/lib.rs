@@ -547,6 +547,12 @@ pub mod flight_recorder;
 /// entering `run()` must have all 32 lanes active.
 pub mod executor;
 
+/// Typed cooperative-priority task contexts and dependency-checked joins.
+///
+/// The typed API makes priority-inverting `wait_for` edges fail to compile,
+/// while keeping task context and hostcall metadata explicit across blocks.
+pub mod priority;
+
 /// GPU async channels — oneshot and mpsc for inter-task communication.
 ///
 /// Provides channels for sending values between GPU async tasks running in the
