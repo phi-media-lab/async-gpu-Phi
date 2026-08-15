@@ -13,8 +13,8 @@ use gpu_host::mapped_mem::{alloc_mapped_result_array, free_mapped_mem};
 pub(crate) fn run_mma_diag(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- MMA Diagnostic: multi-dimension comparison ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "mma_diag", &["full_gemm_f32in", "gemm_f32"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(ptx, "mma_diag", &["full_gemm_f32in", "gemm_f32"])?;
     let f_mma = dev
         .get_func("mma_diag", "full_gemm_f32in")
         .ok_or(GpuHostError::KernelNotFound("full_gemm_f32in"))?;
@@ -233,8 +233,8 @@ pub(crate) fn run_mma_diag(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_tiled_gemm_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Tiled GEMM Test (gpu-compute.5) ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "gemm_test", &["test_tiled_gemm"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(ptx, "gemm_test", &["test_tiled_gemm"])?;
     let f = dev
         .get_func("gemm_test", "test_tiled_gemm")
         .ok_or(GpuHostError::KernelNotFound("test_tiled_gemm"))?;
@@ -306,8 +306,8 @@ pub(crate) fn run_tiled_gemm_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_softmax_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Softmax Test (gpu-compute.6) ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "softmax_test", &["test_softmax"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(ptx, "softmax_test", &["test_softmax"])?;
     let f = dev
         .get_func("softmax_test", "test_softmax")
         .ok_or(GpuHostError::KernelNotFound("test_softmax"))?;
@@ -392,8 +392,8 @@ pub(crate) fn run_softmax_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_multi_tile_gemm_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Multi-tile K-accumulation GEMM test (gpu-pipeline.2) ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "multi_tile_gemm", &["test_multi_tile_gemm"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(ptx, "multi_tile_gemm", &["test_multi_tile_gemm"])?;
     let f = dev
         .get_func("multi_tile_gemm", "test_multi_tile_gemm")
         .ok_or(GpuHostError::KernelNotFound("test_multi_tile_gemm"))?;
@@ -505,8 +505,8 @@ pub(crate) fn run_multi_tile_gemm_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_gemm_softmax_pipeline_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- End-to-end GEMM + softmax pipeline (gpu-pipeline.3) ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "gemm_softmax", &["test_gemm_softmax_pipeline"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(ptx, "gemm_softmax", &["test_gemm_softmax_pipeline"])?;
     let f = dev
         .get_func("gemm_softmax", "test_gemm_softmax_pipeline")
         .ok_or(GpuHostError::KernelNotFound("test_gemm_softmax_pipeline"))?;
@@ -620,8 +620,8 @@ pub(crate) fn run_gemm_softmax_pipeline_test(dev: Arc<CudaDevice>) -> Result<()>
 pub(crate) fn run_multi_warp_gemm_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Multi-warp GEMM test (gemm-scale.1) ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "multi_warp_gemm", &["multi_warp_gemm"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(ptx, "multi_warp_gemm", &["multi_warp_gemm"])?;
     let f = dev
         .get_func("multi_warp_gemm", "multi_warp_gemm")
         .ok_or(GpuHostError::KernelNotFound("multi_warp_gemm"))?;
@@ -784,8 +784,8 @@ pub(crate) fn run_multi_warp_gemm_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_multi_block_gemm_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Multi-block GEMM test (gemm-scale.2) ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "multi_block_gemm", &["multi_block_gemm"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(ptx, "multi_block_gemm", &["multi_block_gemm"])?;
     let f = dev
         .get_func("multi_block_gemm", "multi_block_gemm")
         .ok_or(GpuHostError::KernelNotFound("multi_block_gemm"))?;
@@ -934,8 +934,8 @@ pub(crate) fn run_multi_block_gemm_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_full_gemm_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Full GEMM 768x768 test (gemm-scale.3) ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "full_gemm", &["full_gemm"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(ptx, "full_gemm", &["full_gemm"])?;
     let f = dev
         .get_func("full_gemm", "full_gemm")
         .ok_or(GpuHostError::KernelNotFound("full_gemm"))?;
@@ -1115,8 +1115,8 @@ pub(crate) fn run_full_gemm_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_full_gemm_f32in_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Full GEMM f32-input test (precision-fix.2) ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "gemm_f32in", &["full_gemm", "full_gemm_f32in"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(ptx, "gemm_f32in", &["full_gemm", "full_gemm_f32in"])?;
     let f_packed = dev
         .get_func("gemm_f32in", "full_gemm")
         .ok_or(GpuHostError::KernelNotFound("full_gemm"))?;
@@ -1344,7 +1344,7 @@ pub(crate) fn run_full_gemm_f32in_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_bf16_gemm_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- BF16 MMA GEMM test (mixed-precision.1) ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
     dev.load_ptx(
         ptx,
         "bf16_test",
@@ -1739,7 +1739,7 @@ pub(crate) fn run_bf16_gemm_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_tf32_gemm_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- TF32 MMA GEMM test (tf32-mma.1) ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
     dev.load_ptx(
         ptx,
         "tf32_test",
@@ -1968,12 +1968,12 @@ pub(crate) fn run_tf32_gemm_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_splitk_gemm_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- MMA Sanity Check: all-1.0, 32x16x16 ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(
         ptx,
         "splitk_test",
         &["full_gemm_splitk", "full_gemm_f32in", "gemm_f32"],
-    );
+    )?;
 
     // Minimal test: A=all 1.0 (32x16), B=all 1.0 (16x16), expect D=16.0 everywhere
     {
@@ -2248,11 +2248,11 @@ pub(crate) fn run_splitk_gemm_test(dev: Arc<CudaDevice>) -> Result<()> {
 
         // Test 2: multi_block_gemm (pre-packed f16x2 A, no GPU conversion)
         {
-            let _ = dev.load_ptx(
-                cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX),
+            dev.load_ptx(
+                cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX),
                 "splitk_diag",
                 &["multi_block_gemm"],
-            );
+            )?;
             let f_mbg = dev
                 .get_func("splitk_diag", "multi_block_gemm")
                 .ok_or(GpuHostError::KernelNotFound("multi_block_gemm"))?;
@@ -2305,11 +2305,11 @@ pub(crate) fn run_splitk_gemm_test(dev: Arc<CudaDevice>) -> Result<()> {
     // === MMA Fragment Diagnostic ===
     println!("\n--- MMA Fragment Diagnostic (mma_diag) ---");
     {
-        let _ = dev.load_ptx(
-            cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX),
+        dev.load_ptx(
+            cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX),
             "mma_diag_mod",
             &["mma_diag"],
-        );
+        )?;
         let f_diag = dev
             .get_func("mma_diag_mod", "mma_diag")
             .ok_or(GpuHostError::KernelNotFound("mma_diag"))?;
@@ -2698,8 +2698,8 @@ pub(crate) fn run_splitk_gemm_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_gemm_benchmark(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- GEMM Throughput Benchmark (mma-splitk.5) ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "gemm_bench", &["full_gemm_f32in", "gemm_f32"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(ptx, "gemm_bench", &["full_gemm_f32in", "gemm_f32"])?;
     let f_mma = dev
         .get_func("gemm_bench", "full_gemm_f32in")
         .ok_or(GpuHostError::KernelNotFound("full_gemm_f32in"))?;

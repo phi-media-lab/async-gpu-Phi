@@ -15,8 +15,8 @@ use gpu_host::mapped_mem::{alloc_mapped_result_array, free_mapped_mem};
 pub(crate) fn run_batchnorm_silu_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- BatchNorm + SiLU fused kernel test ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "cnn_test", &["batchnorm_silu", "silu_forward"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(ptx, "cnn_test", &["batchnorm_silu", "silu_forward"])?;
     let f_bn_silu = dev
         .get_func("cnn_test", "batchnorm_silu")
         .ok_or(GpuHostError::KernelNotFound("batchnorm_silu"))?;
@@ -156,8 +156,8 @@ pub(crate) fn run_batchnorm_silu_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_cnn_ops_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- CNN ops test (im2col, MaxPool, Upsample, Concat) ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(
         ptx,
         "cnn_ops",
         &[
@@ -166,7 +166,7 @@ pub(crate) fn run_cnn_ops_test(dev: Arc<CudaDevice>) -> Result<()> {
             "upsample_nearest_2x",
             "concat_channels",
         ],
-    );
+    )?;
 
     macro_rules! get_fn {
         ($name:expr) => {
@@ -398,8 +398,8 @@ pub(crate) fn run_cnn_ops_test(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_conv2d_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Conv2D (im2col + GEMM) test ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "conv2d_test", &["im2col", "gemm_f32"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(ptx, "conv2d_test", &["im2col", "gemm_f32"])?;
     let f_im2col = dev
         .get_func("conv2d_test", "im2col")
         .ok_or(GpuHostError::KernelNotFound("im2col"))?;
@@ -874,7 +874,7 @@ pub(crate) fn run_yolo_backbone_test(dev: Arc<CudaDevice>) -> Result<()> {
         Ok(())
     }
 
-    inner(dev, crate::KERNEL_PTX).map_err(|e| GpuHostError::Verification {
+    inner(dev, crate::KERNEL_COMPUTE_PTX).map_err(|e| GpuHostError::Verification {
         test: "yolo_backbone",
         detail: format!("{e}"),
     })
@@ -1006,7 +1006,7 @@ pub(crate) fn run_detect_head_test(dev: Arc<CudaDevice>) -> Result<()> {
         Ok(())
     }
 
-    inner(dev, crate::KERNEL_PTX).map_err(|e| GpuHostError::Verification {
+    inner(dev, crate::KERNEL_COMPUTE_PTX).map_err(|e| GpuHostError::Verification {
         test: "detect_head",
         detail: format!("{e}"),
     })
@@ -1204,7 +1204,7 @@ pub(crate) fn run_yolo_end_to_end_test(dev: Arc<CudaDevice>) -> Result<()> {
         Ok(())
     }
 
-    inner(dev, crate::KERNEL_PTX).map_err(|e| GpuHostError::Verification {
+    inner(dev, crate::KERNEL_COMPUTE_PTX).map_err(|e| GpuHostError::Verification {
         test: "yolo_e2e",
         detail: format!("{e}"),
     })

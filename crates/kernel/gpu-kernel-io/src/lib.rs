@@ -13,9 +13,12 @@
 // Re-export gpu-kernel-core so its kernel symbols are linked into this crate's cdylib.
 extern crate gpu_kernel_core;
 
+mod composed_priority;
 mod hostcall_kernels;
 mod hybrid;
+mod obstacle_stress;
 mod pipeline;
+mod priority_safety_stress;
 
 // Force-link stdio symbols from gpu-runtime. These are called by the patched
 // std PAL via `extern "C"` blocks, so LTO would strip them without this anchor.

@@ -62,8 +62,8 @@ pub(crate) fn run_full_forward_test(dev: Arc<CudaDevice>) -> Result<()> {
     token_ids_u32.resize(seq as usize, 0); // pad with token 0
 
     // Load PTX with all needed kernels
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(
         ptx,
         "gpt2",
         &[
@@ -78,7 +78,7 @@ pub(crate) fn run_full_forward_test(dev: Arc<CudaDevice>) -> Result<()> {
             "elementwise_add",
             "zero_pad",
         ],
-    );
+    )?;
 
     macro_rules! get_fn {
         ($name:expr) => {
@@ -683,7 +683,7 @@ pub(crate) fn run_full_forward_test(dev: Arc<CudaDevice>) -> Result<()> {
     println!("  Prediction pos {last_pos}: mean={row_mean:.6}, var={row_var:.6}");
     println!(
         "  First 8 values: {:?}",
-        &last_row[..8]
+        last_row[..8]
             .iter()
             .map(|v| format!("{v:.4}"))
             .collect::<Vec<_>>()
@@ -850,8 +850,8 @@ pub(crate) fn run_generation_test(dev: Arc<CudaDevice>) -> Result<()> {
     }
 
     // Load PTX
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(
         ptx,
         "gen",
         &[
@@ -866,7 +866,7 @@ pub(crate) fn run_generation_test(dev: Arc<CudaDevice>) -> Result<()> {
             "elementwise_add",
             "zero_pad",
         ],
-    );
+    )?;
 
     macro_rules! get_fn {
         ($name:expr) => {
@@ -1514,8 +1514,8 @@ pub(crate) fn run_f32_forward_test(dev: Arc<CudaDevice>) -> Result<()> {
     token_ids_u32.resize(seq as usize, 0);
 
     // Load PTX
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(
         ptx,
         "f32fwd",
         &[
@@ -1530,7 +1530,7 @@ pub(crate) fn run_f32_forward_test(dev: Arc<CudaDevice>) -> Result<()> {
             "elementwise_add",
             "zero_pad",
         ],
-    );
+    )?;
 
     macro_rules! get_fn {
         ($name:expr) => {
@@ -2143,8 +2143,8 @@ pub(crate) fn run_bf16_forward_test(dev: Arc<CudaDevice>) -> Result<()> {
     let head_total = (N_HEADS * SEQ * D_HEAD) as usize;
 
     // Load PTX with both kernels
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(
         ptx,
         "bf16fwd",
         &[
@@ -2161,7 +2161,7 @@ pub(crate) fn run_bf16_forward_test(dev: Arc<CudaDevice>) -> Result<()> {
             "elementwise_add",
             "zero_pad",
         ],
-    );
+    )?;
 
     macro_rules! get_fn {
         ($name:expr) => {
@@ -2922,8 +2922,8 @@ pub(crate) fn run_mma_forward_test(dev: Arc<CudaDevice>) -> Result<()> {
     let head_total = (N_HEADS * seq * D_HEAD) as usize;
 
     // Load PTX
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(
         ptx,
         "mma_fwd",
         &[
@@ -2938,7 +2938,7 @@ pub(crate) fn run_mma_forward_test(dev: Arc<CudaDevice>) -> Result<()> {
             "elementwise_add",
             "zero_pad",
         ],
-    );
+    )?;
 
     macro_rules! get_fn {
         ($name:expr) => {
@@ -4609,8 +4609,8 @@ pub(crate) fn run_kv_cached_generation_test(dev: Arc<CudaDevice>) -> Result<()> 
     }
 
     // Load PTX with all required kernels
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_COMPUTE_PTX);
+    dev.load_ptx(
         ptx,
         "kvcache",
         &[
@@ -4627,7 +4627,7 @@ pub(crate) fn run_kv_cached_generation_test(dev: Arc<CudaDevice>) -> Result<()> 
             "zero_pad",
             "kv_cache_append",
         ],
-    );
+    )?;
 
     macro_rules! get_fn {
         ($name:expr) => {

@@ -11,7 +11,7 @@ use gpu_host::mapped_mem::{alloc_mapped_u32, free_mapped_mem};
 pub(crate) fn run_write_thread_idx(dev: Arc<CudaDevice>) -> Result<()> {
     const N: usize = 64;
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_CORE_PTX);
     dev.load_ptx(ptx, "kernel", &["write_thread_idx"])?;
 
     let f = dev
@@ -52,8 +52,8 @@ pub(crate) fn run_vector_add(dev: Arc<CudaDevice>) -> Result<()> {
     let a_host: Vec<f32> = (0..N).map(|i| i as f32).collect();
     let b_host: Vec<f32> = (0..N).map(|i| (N - i) as f32).collect();
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["vector_add"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_CORE_PTX);
+    dev.load_ptx(ptx, "kernel", &["vector_add"])?;
 
     let f = dev
         .get_func("kernel", "vector_add")
@@ -94,8 +94,8 @@ pub(crate) fn run_vector_add(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_asm_smoke_tests(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Step 1 / Step 3: Inline PTX asm smoke tests ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_CORE_PTX);
+    dev.load_ptx(
         ptx,
         "kernel",
         &[
@@ -106,7 +106,7 @@ pub(crate) fn run_asm_smoke_tests(dev: Arc<CudaDevice>) -> Result<()> {
             "test_read_volatile",
             "test_write_volatile",
         ],
-    );
+    )?;
 
     // test_asm_membar_sys
     {
@@ -262,8 +262,8 @@ pub(crate) fn run_integration_sys_store(dev: Arc<CudaDevice>) -> Result<()> {
         std::ptr::write_volatile(flag_host_ptr, 0u32);
     }
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["integration_sys_store"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_CORE_PTX);
+    dev.load_ptx(ptx, "kernel", &["integration_sys_store"])?;
     let f = dev
         .get_func("kernel", "integration_sys_store")
         .ok_or(GpuHostError::KernelNotFound("integration_sys_store"))?;
@@ -335,12 +335,12 @@ pub(crate) fn run_integration_sys_store(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_u64_atomics_tests(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Step 6: u64 atomics smoke tests ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_CORE_PTX);
+    dev.load_ptx(
         ptx,
         "kernel",
         &["test_u64_cas", "test_u64_fetch_add", "test_u64_exchange"],
-    );
+    )?;
 
     // test_u64_cas
     {
@@ -464,12 +464,12 @@ pub(crate) fn run_u64_atomics_tests(dev: Arc<CudaDevice>) -> Result<()> {
 pub(crate) fn run_warp_intrinsics_tests(dev: Arc<CudaDevice>) -> Result<()> {
     println!("\n--- Step 7: Spin-load + warp intrinsics tests ---");
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_CORE_PTX);
+    dev.load_ptx(
         ptx,
         "kernel",
         &["test_spin_load_u32", "test_activemask", "test_lane_id"],
-    );
+    )?;
 
     // test_spin_load_u32
     {

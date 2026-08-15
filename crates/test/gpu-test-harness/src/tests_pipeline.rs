@@ -56,8 +56,8 @@ pub(crate) fn run_file_transform_test(dev: Arc<CudaDevice>) -> Result<()> {
         });
     });
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["file_transform_pipeline"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_IO_PTX);
+    dev.load_ptx(ptx, "kernel", &["file_transform_pipeline"])?;
     let f = dev
         .get_func("kernel", "file_transform_pipeline")
         .ok_or(GpuHostError::KernelNotFound("file_transform_pipeline"))?;
@@ -173,8 +173,8 @@ pub(crate) fn run_panic_test(dev: Arc<CudaDevice>) -> Result<()> {
         });
     });
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "panic_test", &["panic_test_kernel"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_IO_PTX);
+    dev.load_ptx(ptx, "panic_test", &["panic_test_kernel"])?;
     let f = dev
         .get_func("panic_test", "panic_test_kernel")
         .ok_or(GpuHostError::KernelNotFound("panic_test_kernel"))?;
@@ -251,8 +251,8 @@ pub(crate) fn run_bulk_io_test(dev: Arc<CudaDevice>) -> Result<()> {
         });
     });
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["bulk_io_test"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_IO_PTX);
+    dev.load_ptx(ptx, "kernel", &["bulk_io_test"])?;
     let f = dev
         .get_func("kernel", "bulk_io_test")
         .ok_or(GpuHostError::KernelNotFound("bulk_io_test"))?;
@@ -342,8 +342,8 @@ pub(crate) fn run_sharded_hostcall_test(dev: Arc<CudaDevice>) -> Result<()> {
         });
     });
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel_sharded", &["sharded_print_test"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_IO_PTX);
+    dev.load_ptx(ptx, "kernel_sharded", &["sharded_print_test"])?;
     let f = dev
         .get_func("kernel_sharded", "sharded_print_test")
         .ok_or(GpuHostError::KernelNotFound("sharded_print_test"))?;
@@ -448,8 +448,8 @@ Yet another GPU mention for testing\n";
         });
     });
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel_grep", &["parallel_grep_kernel"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_IO_PTX);
+    dev.load_ptx(ptx, "kernel_grep", &["parallel_grep_kernel"])?;
     let f = dev
         .get_func("kernel_grep", "parallel_grep_kernel")
         .ok_or(GpuHostError::KernelNotFound("parallel_grep_kernel"))?;
@@ -545,8 +545,8 @@ pub(crate) fn run_branching_pipeline_test(dev: Arc<CudaDevice>) -> Result<()> {
 
     // --- Run 1: file does not exist → CREATE branch ---
     {
-        let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-        let _ = dev.load_ptx(ptx, "kernel_bp1", &["branching_pipeline"]);
+        let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_IO_PTX);
+        dev.load_ptx(ptx, "kernel_bp1", &["branching_pipeline"])?;
         let f = dev
             .get_func("kernel_bp1", "branching_pipeline")
             .ok_or(GpuHostError::KernelNotFound("branching_pipeline"))?;
@@ -610,8 +610,8 @@ pub(crate) fn run_branching_pipeline_test(dev: Arc<CudaDevice>) -> Result<()> {
 
     // --- Run 2: file exists → EXISTS branch ---
     {
-        let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-        let _ = dev.load_ptx(ptx, "kernel_bp2", &["branching_pipeline"]);
+        let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_IO_PTX);
+        dev.load_ptx(ptx, "kernel_bp2", &["branching_pipeline"])?;
         let f = dev
             .get_func("kernel_bp2", "branching_pipeline")
             .ok_or(GpuHostError::KernelNotFound("branching_pipeline"))?;
@@ -699,8 +699,8 @@ pub(crate) fn run_pipelined_compute_test(dev: Arc<CudaDevice>) -> Result<()> {
         });
     });
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel_pp", &["pipelined_compute"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_IO_PTX);
+    dev.load_ptx(ptx, "kernel_pp", &["pipelined_compute"])?;
     let f = dev
         .get_func("kernel_pp", "pipelined_compute")
         .ok_or(GpuHostError::KernelNotFound("pipelined_compute"))?;
@@ -795,7 +795,7 @@ pub(crate) fn run_warp_scale_async_test(dev: Arc<CudaDevice>) -> Result<()> {
     });
 
     let ptx = cudarc::nvrtc::Ptx::from_src(crate::ASYNC_HOSTCALL_PTX);
-    let _ = dev.load_ptx(ptx, "warp_scale_async", &["warp_scale_async_kernel"]);
+    dev.load_ptx(ptx, "warp_scale_async", &["warp_scale_async_kernel"])?;
     let f = dev
         .get_func("warp_scale_async", "warp_scale_async_kernel")
         .ok_or(GpuHostError::KernelNotFound("warp_scale_async_kernel"))?;
@@ -887,8 +887,8 @@ pub(crate) fn run_autonomous_pipeline_test(dev: Arc<CudaDevice>) -> Result<()> {
         mode: u64,
         module_name: &'static str,
     ) -> Result<(u32, Vec<String>)> {
-        let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-        let _ = dev.load_ptx(ptx, module_name, &["autonomous_pipeline"]);
+        let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_TEST_PTX);
+        dev.load_ptx(ptx, module_name, &["autonomous_pipeline"])?;
         let f = dev
             .get_func(module_name, "autonomous_pipeline")
             .ok_or(GpuHostError::KernelNotFound("autonomous_pipeline"))?;
@@ -1021,8 +1021,8 @@ pub(crate) fn run_buffered_print_test(dev: Arc<CudaDevice>) -> Result<()> {
         });
     });
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["buffered_print_test"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_IO_PTX);
+    dev.load_ptx(ptx, "kernel", &["buffered_print_test"])?;
     let f = dev
         .get_func("kernel", "buffered_print_test")
         .ok_or(GpuHostError::KernelNotFound("buffered_print_test"))?;
@@ -1101,8 +1101,8 @@ pub(crate) fn run_newton_sqrt_test(dev: Arc<CudaDevice>) -> Result<()> {
         (1e6, 1000.0, 1e-2),
     ];
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["newton_sqrt_kernel"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_IO_PTX);
+    dev.load_ptx(ptx, "kernel", &["newton_sqrt_kernel"])?;
     let f = dev
         .get_func("kernel", "newton_sqrt_kernel")
         .ok_or(GpuHostError::KernelNotFound("newton_sqrt_kernel"))?;

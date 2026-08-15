@@ -44,8 +44,8 @@ fn run_latency_bench_config(
         });
     });
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["hostcall_latency_bench"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_IO_PTX);
+    dev.load_ptx(ptx, "kernel", &["hostcall_latency_bench"])?;
     let f = dev
         .get_func("kernel", "hostcall_latency_bench")
         .ok_or(GpuHostError::KernelNotFound("hostcall_latency_bench"))?;
@@ -185,8 +185,8 @@ pub(super) fn run_latency_bench_explicit(
         hc_buf_listener.listen(|_msg| {});
     });
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel", &["hostcall_latency_bench"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_IO_PTX);
+    dev.load_ptx(ptx, "kernel", &["hostcall_latency_bench"])?;
     let f = dev
         .get_func("kernel", "hostcall_latency_bench")
         .ok_or(GpuHostError::KernelNotFound("hostcall_latency_bench"))?;
@@ -406,8 +406,8 @@ pub(super) fn run_sharding_bench_config(
         hc_buf_listener.listen(|_msg| {});
     });
 
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel_bench_v2", &["hostcall_latency_bench_v2"]);
+    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_IO_PTX);
+    dev.load_ptx(ptx, "kernel_bench_v2", &["hostcall_latency_bench_v2"])?;
     let f = dev
         .get_func("kernel_bench_v2", "hostcall_latency_bench_v2")
         .ok_or(GpuHostError::KernelNotFound("hostcall_latency_bench_v2"))?;
@@ -564,6 +564,16 @@ fn run_v3_bench(
 ) -> Result<BenchmarkResult> {
     let num_threads = grid_dim * block_dim;
 
+    crate::kernel_routes::load_kernel(
+        dev,
+        crate::kernel_routes::KernelModule::Io,
+        "kernel_bench_v3",
+        &["hostcall_latency_bench_v3"],
+    )?;
+    let f = dev
+        .get_func("kernel_bench_v3", "hostcall_latency_bench_v3")
+        .ok_or(GpuHostError::KernelNotFound("hostcall_latency_bench_v3"))?;
+
     let hc_buf = hostcall::HostcallBuffer::new(num_packets)?;
     let dev_ptr = hc_buf.dev_ptr();
 
@@ -580,16 +590,8 @@ fn run_v3_bench(
     }
 
     let hc_buf_ref = Arc::new(hc_buf);
-    let hc_buf_listener = Arc::clone(&hc_buf_ref);
-    let listener_handle = std::thread::spawn(move || {
-        hc_buf_listener.listen(|_msg| {});
-    });
-
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel_bench_v3", &["hostcall_latency_bench_v3"]);
-    let f = dev
-        .get_func("kernel_bench_v3", "hostcall_latency_bench_v3")
-        .ok_or(GpuHostError::KernelNotFound("hostcall_latency_bench_v3"))?;
+    let listener =
+        crate::harness_support::HostcallListener::start(Arc::clone(&hc_buf_ref), |_msg| {});
 
     let cfg = LaunchConfig {
         grid_dim: (grid_dim, 1, 1),
@@ -605,8 +607,7 @@ fn run_v3_bench(
     let wall_elapsed = start.elapsed();
 
     std::thread::sleep(std::time::Duration::from_millis(50));
-    hc_buf_ref.signal_shutdown();
-    listener_handle.join().unwrap();
+    listener.finish()?;
 
     // Read header results
     let mut per_thread_latencies_ns: Vec<f64> = Vec::new();
@@ -820,6 +821,16 @@ pub(crate) fn run_file_io_benchmark(dev: Arc<CudaDevice>) -> Result<()> {
     println!("  Thread 0 performs N rounds of open→write→close→open→read→close.");
     println!("  Per-phase timestamps via file_io_bench kernel.\n");
 
+    crate::kernel_routes::load_kernel(
+        &dev,
+        crate::kernel_routes::KernelModule::Io,
+        "kernel_file_bench",
+        &["file_io_bench"],
+    )?;
+    let f = dev
+        .get_func("kernel_file_bench", "file_io_bench")
+        .ok_or(GpuHostError::KernelNotFound("file_io_bench"))?;
+
     let num_iters: u32 = 30;
 
     let hc_buf = hostcall::HostcallBuffer::new(4)?;
@@ -836,16 +847,8 @@ pub(crate) fn run_file_io_benchmark(dev: Arc<CudaDevice>) -> Result<()> {
     }
 
     let hc_buf_ref = Arc::new(hc_buf);
-    let hc_buf_listener = Arc::clone(&hc_buf_ref);
-    let listener_handle = std::thread::spawn(move || {
-        hc_buf_listener.listen(|_msg| {});
-    });
-
-    let ptx = cudarc::nvrtc::Ptx::from_src(crate::KERNEL_PTX);
-    let _ = dev.load_ptx(ptx, "kernel_file_bench", &["file_io_bench"]);
-    let f = dev
-        .get_func("kernel_file_bench", "file_io_bench")
-        .ok_or(GpuHostError::KernelNotFound("file_io_bench"))?;
+    let listener =
+        crate::harness_support::HostcallListener::start(Arc::clone(&hc_buf_ref), |_msg| {});
 
     let cfg = LaunchConfig {
         grid_dim: (1, 1, 1),
@@ -874,8 +877,7 @@ pub(crate) fn run_file_io_benchmark(dev: Arc<CudaDevice>) -> Result<()> {
     let wall_elapsed = start.elapsed();
 
     std::thread::sleep(std::time::Duration::from_millis(50));
-    hc_buf_ref.signal_shutdown();
-    listener_handle.join().unwrap();
+    listener.finish()?;
 
     // Read results
     let total_ns = unsafe { std::ptr::read_volatile(results_host_ptr.add(0)) };
