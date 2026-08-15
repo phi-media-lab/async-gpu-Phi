@@ -1,0 +1,100 @@
+# typed-priority.2 Phase3 final CI lint evidence (cycle 644)
+
+EVIDENCE_CLASS=machine-direct official repository lint transcript
+COMMAND=ssh nv 'cd /home/fbsh/async-gpu && env NO_COLOR=1 CARGO_TERM_COLOR=never AUTO_BUILD_KERNEL=0 /bin/bash scripts/ci-lint.sh'
+NOTE=AUTO_BUILD_KERNEL=0 prevents gpu-host build.rs from recopying the already GPU-verified IO PTX; scripts explicit PTX build matrix still runs.
+VERDICT=PASS
+
+----- BEGIN RAW STDOUT+STDERR -----
+==> fmt async-gpu
+    [0;32mOK[0m
+==> fmt gpu-host
+    [0;32mOK[0m
+==> fmt gpu-protocol
+    [0;32mOK[0m
+==> fmt gpu-atomics
+    [0;32mOK[0m
+==> fmt gpu-runtime
+    [0;32mOK[0m
+==> fmt gpu-libc
+    [0;32mOK[0m
+==> fmt gpu-test-harness
+    [0;32mOK[0m
+==> fmt gpu-test-macro
+    [0;32mOK[0m
+==> clippy async-gpu
+    [0;32mOK[0m
+==> clippy gpu-host
+    [0;32mOK[0m
+==> clippy gpu-protocol
+    [0;32mOK[0m
+==> clippy gpu-atomics
+    [0;32mOK[0m
+==> clippy gpu-runtime
+    [0;32mOK[0m
+==> clippy gpu-test-macro
+    [0;32mOK[0m
+==> doc-tests gpu-protocol
+    [0;32mOK[0m
+==> doc async-gpu
+    [0;32mOK[0m
+==> doc gpu-host
+    [0;32mOK[0m
+==> doc gpu-protocol
+    [0;32mOK[0m
+==> doc gpu-atomics
+    [0;32mOK[0m
+==> doc gpu-runtime
+    [0;32mOK[0m
+==> check async-gpu
+    [0;32mOK[0m
+==> check async-gpu+nn
+    [0;32mOK[0m
+==> check gpu-host
+    [0;32mOK[0m
+==> check gpu-test-harness
+    [0;32mOK[0m
+==> check gpu-test-macro
+    [0;32mOK[0m
+==> ptx async-hostcall-test
+    [0;32mOK[0m
+==> ptx async-pipeline-test
+    [0;32mOK[0m
+==> ptx embassy-test
+    [0;32mOK[0m
+==> ptx multi-warp-test
+    [0;32mOK[0m
+==> ptx gpu-std-test
+    [0;32mOK[0m
+==> ptx kernel
+    [0;32mOK[0m
+==> ptx kernel
+    [0;32mOK[0m
+==> ptx kernel
+    [0;32mOK[0m
+==> ptx kernel
+    [0;32mOK[0m
+==> ptx kernel
+    [0;32mOK[0m
+==> check hello-gpu-host
+    [0;32mOK[0m
+==> check async-io-host
+    [0;32mOK[0m
+==> check vector-math-host
+    [0;32mOK[0m
+==> check parallel-search-host
+    [0;32mOK[0m
+==> check tcp-echo-host
+    [0;32mOK[0m
+==> check tokio-offload
+    [0;32mOK[0m
+==> check structured-concurrency
+    [0;32mOK[0m
+==> check gpu-channels
+    [0;32mOK[0m
+==> check warp-cooperative
+    [0;32mOK[0m
+
+[0;32mAll CI lint checks passed![0m
+
+----- END RAW STDOUT+STDERR -----

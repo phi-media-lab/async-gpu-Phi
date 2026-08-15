@@ -1,0 +1,122 @@
+priority-handle-safety.3 Phase3 final real-GPU evidence (c644)
+Date: 2026-08-15 Asia/Shanghai
+Host/device: nv / NVIDIA RTX 4070 / sm_89
+
+Provenance
+----------
+executor.rs sha256: de59ac88a7370163f0e3efde108a90301416eabc9f94de9ae725c1398652d717
+priority.rs sha256: e011b0621ca38049cb601c1b0e71ca1d4830dd908f10f333c70cc2564a6a3f3c
+gpu-protocol/src/lib.rs sha256: fa25c17d9b4e22141d548124894c69660d8661de88dd66235d347fc6b364393a
+priority_safety_stress.rs sha256: b274c2b4a39ba305f2d7e40d03dd6a85b3228114534fc3f7016425f2d9c3cbfc
+tests_priority_safety.rs sha256: 50ad86eb25344351a7b54811fe7ba6ec986f27cd2cb095faa7f4d06fb9cfc98a
+typed_priority_runner.sh sha256: cb0cf9a779972e322523e9f715c5e704be182d7984e02c5e0d4b558890167c7e
+kernel_io.ptx sha256: fb95559e93eec1c07dbb4925c4564e43263cbd55de07a208ffa6b46b51e68531
+kernel_io.ptx size: 4821968 bytes
+kernel_io.ptx mtime: 2026-08-15 07:20:10.697811097 +0800
+sm_89 ptxas: PASS, 196.71 seconds, cubin 21109920 bytes
+kernel route tests: PASS, 6/6
+runtime host tests: PASS, debug 39/39 and release 39/39
+typed dependency matrix: PASS, 13/13
+Phase3 publication/oracle model: PASS, 3/3
+
+The run used AUTO_BUILD_KERNEL=0 and direct command-output capture. It did not
+rebuild or overwrite PTX. The PTX hash, size, and mtime were checked before and
+after the launch. The host harness has a 30-second bounded kernel watchdog.
+
+Command
+-------
+cd /home/fbsh/async-gpu
+sha256sum crates/core/gpu-host/kernel_io.ptx
+stat -c '%s %y' crates/core/gpu-host/kernel_io.ptx
+AUTO_BUILD_KERNEL=0 ONLY_TEST=priority_safety /usr/bin/time \
+  -f 'SAFETY_SECONDS=%e EXIT=%x' cargo +stable run --release \
+  --manifest-path crates/test/gpu-test-harness/Cargo.toml --bin gpu-tests
+sha256sum crates/core/gpu-host/kernel_io.ptx
+stat -c '%s %y' crates/core/gpu-host/kernel_io.ptx
+
+Direct output
+-------------
+fb95559e93eec1c07dbb4925c4564e43263cbd55de07a208ffa6b46b51e68531  /home/fbsh/async-gpu/crates/core/gpu-host/kernel_io.ptx
+4821968 2026-08-15 07:20:10.697811097 +0800
+   Compiling memchr v2.8.0
+   Compiling proc-macro2 v1.0.106
+   Compiling quote v1.0.45
+   Compiling serde_core v1.0.228
+   Compiling unicode-ident v1.0.24
+   Compiling crossbeam-utils v0.8.21
+   Compiling libc v0.2.183
+   Compiling regex-syntax v0.8.10
+   Compiling cfg-if v1.0.4
+   Compiling zmij v1.0.21
+   Compiling parking_lot_core v0.9.12
+   Compiling anyhow v1.0.102
+   Compiling bit-vec v0.6.3
+   Compiling serde_json v1.0.149
+   Compiling scopeguard v1.2.0
+   Compiling smallvec v1.15.1
+   Compiling serde v1.0.228
+   Compiling allocator-api2 v0.2.21
+   Compiling cudarc v0.12.1
+   Compiling equivalent v1.0.2
+   Compiling foldhash v0.2.0
+   Compiling lock_api v0.4.14
+   Compiling itoa v1.0.17
+   Compiling rayon-core v1.13.0
+   Compiling libloading v0.8.9
+   Compiling gpu-host v0.1.0 (/home/fbsh/async-gpu/crates/core/gpu-host)
+   Compiling base64 v0.21.7
+   Compiling lazy_static v1.5.0
+   Compiling rustc-hash v1.1.0
+   Compiling either v1.15.0
+   Compiling bit-set v0.5.3
+   Compiling gpu-protocol v0.1.0 (/home/fbsh/async-gpu/crates/core/gpu-protocol)
+   Compiling aho-corasick v1.1.4
+   Compiling crossbeam-epoch v0.9.18
+   Compiling syn v2.0.117
+   Compiling crossbeam-deque v0.8.6
+   Compiling parking_lot v0.12.5
+   Compiling rayon v1.12.0
+   Compiling regex-automata v0.4.14
+   Compiling hashbrown v0.16.1
+   Compiling serde_derive v1.0.228
+   Compiling regex v1.12.3
+   Compiling bstr v1.12.1
+   Compiling fancy-regex v0.13.0
+   Compiling safetensors v0.7.0
+   Compiling tiktoken-rs v0.6.0
+   Compiling gpu-test-harness v0.1.0 (/home/fbsh/async-gpu/crates/test/gpu-test-harness)
+    Finished `release` profile [optimized] target(s) in 24.69s
+     Running `target/release/gpu-tests`
+=== GPU Kernel Execution Test ===
+
+CUDA device initialized successfully
+ONLY_TEST=priority_safety: route plan=io
+ONLY_TEST=priority_safety: explicit PTX route=io symbols=["priority_handle_safety_stress"]
+
+--- priority handle safety: stale Waker + generation + cross-block ---
+  masks: p1=0xfe/0xfe p2=0xfe/0xfe p3=0xfe/0xfe poll-blocks=0x3 capture-block=0x1
+  pin/reuse: refs=1->1 reclaims=1->0 High=255 nofree=1 queuefull-retries=0 reuse-error=0 slot=0→0 generation=1→2 stale=1
+  typed shutdown: token-state=2/2 donor=1/1 target=1/polls2 shutdown=1 wait=1/1 pending=2->1->0 refs=2->1->0 seq=[1,2,3,4,5,6] teardown=1
+  runner tasks=[0, 63, 76, 72, 80, 72, 68, 83] polls=[0, 175, 262, 176, 250, 229, 205, 235]
+  PASS: stale Waker/generation, 256 exact TwoPoll tasks, and typed shutdown Cancelled/AlreadyJoined gates hold
+SAFETY_SECONDS=25.10 EXIT=0
+fb95559e93eec1c07dbb4925c4564e43263cbd55de07a208ffa6b46b51e68531  /home/fbsh/async-gpu/crates/core/gpu-host/kernel_io.ptx
+4821968 2026-08-15 07:20:10.697811097 +0800
+
+Verdict
+-------
+PASS. Both blocks polled the shared executor. Retaining a terminal Waker kept
+one slot out of the free pool, giving exactly 255 High admissions plus one
+NoFreeSlots rejection. Dropping it released the reclaim, reused the same slot
+at generation 1 -> 2, and left the old TaskKey Stale. All 256 TwoPoll tasks
+polled exactly twice and completed once.
+
+Phase3 used real typed APIs: the Low donor uniquely moved its executor-issued
+token through release/acquire storage; the High target entered the code path
+that necessarily returns Pending and issued a real self-wake before the READY
+publication. Shutdown then produced Cancelled, replay produced AlreadyJoined,
+pending reclaims fell 2 -> 1 -> 0 after handle/token release, all seven runners
+exited, and final spawned/completed were 515 with active/context refs/pending
+reclaims all zero and can_teardown true. The event is published inside poll
+before Poll::Pending returns, so this evidence does not claim that shutdown is
+externally ordered after the poll call has returned.

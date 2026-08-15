@@ -1,0 +1,29 @@
+Production-fix final obstacle regression evidence
+Recorded: 2026-08-15 Asia/Shanghai
+Command: ssh nv 'cd /home/fbsh/async-gpu && /usr/bin/time -f "TOTAL_SECONDS=%e EXIT=%x" timeout --signal=TERM --kill-after=10s 120s env NO_COLOR=1 CARGO_TERM_COLOR=never AUTO_BUILD_KERNEL=0 ONLY_TEST=obstacle_stress cargo run -p gpu-test-harness --bin gpu-tests'
+Device: NVIDIA GeForce RTX 4070; driver 595.84; compute capability 8.9
+Executor source SHA-256: de59ac88a7370163f0e3efde108a90301416eabc9f94de9ae725c1398652d717
+IO PTX SHA-256: 51a9376c3e1cd842bd5801704c8da64277dce2c281628b9311bb79f7fcca9a16
+Capture provenance: direct exec output passed to apply_patch without UI copy or SSH reread.
+
+--- BEGIN RAW STDOUT+STDERR ---
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.04s
+     Running `target/debug/gpu-tests`
+=== GPU Kernel Execution Test ===
+
+CUDA device initialized successfully
+ONLY_TEST=obstacle_stress: route plan=io
+ONLY_TEST=obstacle_stress: explicit PTX route=io symbols=["obstacle_event_priority_stress"]
+
+--- 障碍事件优先级压力测试 / Obstacle-event priority stress ---
+  语义范围：协作式调度，不是硬实时，也不控制真实机器人执行器。
+  admission: Low total=224/224 (work=223), ReservedCapacity rejects=1, other rejects=0, High accepted=1
+  positive dispatch: inject=225 first=226 gap=1 resume=227 wake-gap=1 timestamps=1786747252347151360ns→1786747252347211776ns latency=60416ns
+  Low completion: 223/223; executor completed=225/225; total dispatches=450
+  bounded non-yielding negative: High accepted=1 inject=1 low-return=2 High-first=3 timestamps=1786747252359905280ns→1786747252368802816ns→1786747252368849920ns latency=8944640ns busy-iters=4096 dispatches=3
+  decisions: fresh(action=1,reason=1,use_gpu=1); stale(action=2,reason=2,use_gpu=0); deadline(action=2,reason=4,use_gpu=0)
+  gates: reserved=1 first_poll=1 waker=1 low_eventual=1 positive=1 no_midpoll=1 decisions=1 overall=1
+  PASS：协作式 priority 语义成立；负例同时证明 poll 内不可抢占。
+TOTAL_SECONDS=0.49 EXIT=0
+--- END RAW STDOUT+STDERR ---
+

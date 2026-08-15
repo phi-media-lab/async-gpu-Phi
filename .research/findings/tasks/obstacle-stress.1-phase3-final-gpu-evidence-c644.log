@@ -1,0 +1,38 @@
+# obstacle-stress.1 Phase3 final same-PTX GPU evidence (cycle 644)
+
+EVIDENCE_CLASS=machine-direct same-final-PTX GPU transcript
+CAPTURE_CHAIN=exec_command raw result -> functions persistent store -> apply_patch
+MANUAL_TRANSCRIPTION=false
+COMMAND=ssh nv 'cd /home/fbsh/async-gpu && /usr/bin/time -f "TOTAL_SECONDS=%e EXIT=%x" timeout --signal=TERM --kill-after=10s 300s env NO_COLOR=1 CARGO_TERM_COLOR=never AUTO_BUILD_KERNEL=0 ONLY_TEST=obstacle_stress cargo run -p gpu-test-harness --bin gpu-tests'
+DEVICE=NVIDIA GeForce RTX 4070
+DEVICE_UUID=GPU-28d67e7a-0f16-5785-090d-b94662f99d3e
+DRIVER=595.84
+COMPUTE_CAPABILITY=8.9
+PTX_PATH=/home/fbsh/async-gpu/crates/core/gpu-host/kernel_io.ptx
+PTX_SHA256_BEFORE=fb95559e93eec1c07dbb4925c4564e43263cbd55de07a208ffa6b46b51e68531
+PTX_SHA256_AFTER=fb95559e93eec1c07dbb4925c4564e43263cbd55de07a208ffa6b46b51e68531
+PTX_SIZE_BYTES=4821968
+PTX_MTIME=2026-08-15 07:20:10.697811097 +0800
+VERDICT=PASS
+
+----- BEGIN RAW STDOUT+STDERR -----
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s
+     Running `target/debug/gpu-tests`
+=== GPU Kernel Execution Test ===
+
+CUDA device initialized successfully
+ONLY_TEST=obstacle_stress: route plan=io
+ONLY_TEST=obstacle_stress: explicit PTX route=io symbols=["obstacle_event_priority_stress"]
+
+--- 障碍事件优先级压力测试 / Obstacle-event priority stress ---
+  语义范围：协作式调度，不是硬实时，也不控制真实机器人执行器。
+  admission: Low total=224/224 (work=223), ReservedCapacity rejects=1, other rejects=0, High accepted=1
+  positive dispatch: inject=225 first=226 gap=1 resume=227 wake-gap=1 timestamps=1786750586390646784ns→1786750586390707200ns latency=60416ns
+  Low completion: 223/223; executor completed=225/225; total dispatches=450
+  bounded non-yielding negative: High accepted=1 inject=1 low-return=2 High-first=3 timestamps=1786750586403994624ns→1786750586412400640ns→1786750586412443648ns latency=8449024ns busy-iters=4096 dispatches=3
+  decisions: fresh(action=1,reason=1,use_gpu=1); stale(action=2,reason=2,use_gpu=0); deadline(action=2,reason=4,use_gpu=0)
+  gates: reserved=1 first_poll=1 waker=1 low_eventual=1 positive=1 no_midpoll=1 decisions=1 overall=1
+  PASS：协作式 priority 语义成立；负例同时证明 poll 内不可抢占。
+TOTAL_SECONDS=0.60 EXIT=0
+----- END RAW STDOUT+STDERR -----
+
