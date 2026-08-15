@@ -148,6 +148,311 @@ pub const SERVICE_TCP_BULK_WRITE: u32 = 22;
 ///   Slot 0: bytes read (`u64`), or encoded error
 pub const SERVICE_TCP_BULK_READ: u32 = 23;
 
+/// Inline priority/identity echo used by the composed scheduler-hostcall
+/// conformance test.
+///
+/// This service deliberately has no side effects.  The host validates the
+/// generation-owned packet header, records an independent event, and writes
+/// the observed identity/provenance back into the eight inline payload slots.
+pub const SERVICE_PRIORITY_ECHO: u32 = 24;
+
+/// Wire slots for [`SERVICE_PRIORITY_ECHO`].
+pub mod priority_echo {
+    /// Request and response slot containing a non-zero caller nonce.
+    pub const NONCE: usize = 0;
+    /// Response slot containing the task id read from the live packet header.
+    pub const TASK_ID: usize = 1;
+    /// Response slot containing the raw effective priority.
+    pub const PRIORITY: usize = 2;
+    /// Response slot containing the physical packet index.
+    pub const PACKET_INDEX: usize = 3;
+    /// Response slot: one iff the packet belongs to the shared High reserve.
+    pub const SHARED_HIGH_RESERVED: usize = 4;
+    /// Response slot containing the host processing sequence number.
+    pub const PROCESS_SEQUENCE: usize = 5;
+    /// Response slot containing the number of times this identity was seen.
+    pub const PROCESS_COUNT: usize = 6;
+    /// Response slot containing zero or an `ERR_*` category.
+    pub const ERROR_CATEGORY: usize = 7;
+    /// Number of inline `u64` slots in a packet lane.
+    pub const SLOTS: usize = 8;
+}
+
+/// Named output schema shared by the composed obstacle-event GPU kernel and
+/// its independent host oracle.  Keeping all offsets here prevents either
+/// side from silently accepting an accidental layout change.
+pub mod composed_priority_schema {
+    /// Schema 版本值 / Schema version value.
+    pub const VERSION_VALUE: u64 = 3;
+    /// 输出字数 / Output word count.
+    pub const WORD_COUNT: usize = 112;
+    /// 固定任务命名空间 / Fixed task namespace.
+    pub const NAMESPACE_VALUE: u64 = 0x0B57_A11E;
+    /// Typed Low coordinator is the 224th admitted task.
+    pub const COORDINATOR_LOCAL_ID_VALUE: u64 = 224;
+    /// All task kinds share one monotonic trace sequence: 224 Low + 16 Normal.
+    pub const EXPECTED_HIGH_LOCAL_ID_VALUE: u64 = 241;
+    /// Packet 总数 / Total packet count.
+    pub const PACKET_COUNT_VALUE: u64 = 5;
+    /// General packet 数量 / General packet count.
+    pub const GENERAL_PACKET_COUNT_VALUE: u64 = 4;
+    /// High 预留 packet 数量 / High-reserved packet count.
+    pub const HIGH_RESERVED_COUNT_VALUE: u64 = 1;
+    /// Low 准入上限 / Low admission limit.
+    pub const LOW_LIMIT_VALUE: u64 = 224;
+    /// Normal backlog 数量 / Normal backlog size.
+    pub const NORMAL_BACKLOG_VALUE: u64 = 16;
+    /// High first-poll 最大 dispatch gap / Maximum High first-poll dispatch gap.
+    pub const HIGH_FIRST_POLL_GAP_MAX_VALUE: u64 = 6;
+    /// Schema 结束哨兵 / Schema end sentinel.
+    pub const END_MAGIC_VALUE: u64 = 0x0C05_ED0E_2F1A_1644;
+
+    /// Schema 版本字段索引 / Schema-version field index.
+    pub const VERSION: usize = 0;
+    /// 输出字数字段索引 / Word-count field index.
+    pub const WORDS: usize = 1;
+    /// Kernel 阶段字段索引 / Kernel-phase field index.
+    pub const PHASE: usize = 2;
+    /// 请求 nonce 字段索引 / Request-nonce field index.
+    pub const NONCE: usize = 3;
+    /// Task namespace 字段索引 / Task-namespace field index.
+    pub const NAMESPACE: usize = 4;
+    /// 预期 High local ID 字段索引 / Expected High local-ID field index.
+    pub const EXPECTED_HIGH_LOCAL_ID: usize = 5;
+    /// Packet 总数字段索引 / Packet-count field index.
+    pub const PACKET_COUNT: usize = 6;
+    /// General packet 数字段索引 / General-packet-count field index.
+    pub const GENERAL_PACKET_COUNT: usize = 7;
+    /// High reserve 数字段索引 / High-reserve-count field index.
+    pub const HIGH_RESERVED_COUNT: usize = 8;
+    /// Low 上限字段索引 / Low-limit field index.
+    pub const HARD_LOW_LIMIT: usize = 9;
+    /// Normal backlog 字段索引 / Normal-backlog field index.
+    pub const HARD_NORMAL_BACKLOG: usize = 10;
+    /// High dispatch gap 上限字段索引 / High dispatch-gap bound field index.
+    pub const HIGH_FIRST_POLL_GAP_MAX: usize = 11;
+    /// Freshness budget 字段索引 / Freshness-budget field index.
+    pub const FRESHNESS_BUDGET_TICKS: usize = 12;
+    /// Deadline budget 字段索引 / Deadline-budget field index.
+    pub const DEADLINE_BUDGET_TICKS: usize = 13;
+    /// 预期结束哨兵字段索引 / Expected-end-sentinel field index.
+    pub const EXPECTED_END_MAGIC: usize = 14;
+    /// 实际结束哨兵字段索引 / Actual-end-sentinel field index.
+    pub const END_MAGIC: usize = 15;
+
+    /// Low admitted 数字段索引 / Low-admitted-count field index.
+    pub const LOW_ADMITTED: usize = 16;
+    /// ReservedCapacity 拒绝数字段索引 / Reserved-capacity-rejection field index.
+    pub const RESERVED_CAPACITY_REJECTIONS: usize = 17;
+    /// 已取得 lease 数字段索引 / Acquired-lease-count field index.
+    pub const LEASE_ACQUIRED: usize = 18;
+    /// Lease packet mask 字段索引 / Lease-packet-mask field index.
+    pub const LEASE_MASK: usize = 19;
+    /// 存活 Normal 数字段索引 / Live-Normal-count field index.
+    pub const NORMAL_ALIVE: usize = 20;
+    /// General pool exhausted 标记索引 / General-pool-exhausted marker index.
+    pub const GENERAL_POOL_EXHAUSTED: usize = 21;
+    /// 全局 dispatch sequence 字段索引 / Global dispatch-sequence field index.
+    pub const DISPATCH_SEQUENCE: usize = 22;
+    /// High 注入 sequence 字段索引 / High-injection-sequence field index.
+    pub const HIGH_INJECT_SEQUENCE: usize = 23;
+    /// High first-poll sequence 字段索引 / High first-poll-sequence field index.
+    pub const HIGH_FIRST_POLL_SEQUENCE: usize = 24;
+    /// High hostcall submit sequence 字段索引 / High hostcall-submit-sequence field index.
+    pub const HIGH_SUBMIT_SEQUENCE: usize = 25;
+    /// High hostcall ready sequence 字段索引 / High hostcall-ready-sequence field index.
+    pub const HIGH_READY_SEQUENCE: usize = 26;
+    /// Low wait 起点 sequence 字段索引 / Low-wait-start-sequence field index.
+    pub const LOW_WAIT_START_SEQUENCE: usize = 27;
+    /// Low join sequence 字段索引 / Low-join-sequence field index.
+    pub const LOW_JOIN_SEQUENCE: usize = 28;
+    /// 第二次 Low join sequence 字段索引 / Second-Low-join-sequence field index.
+    pub const LOW_SECOND_JOIN_SEQUENCE: usize = 29;
+    /// High first-poll 时间戳字段索引 / High first-poll-timestamp field index.
+    pub const HIGH_FIRST_POLL_TIMESTAMP: usize = 30;
+    /// High ready 时间戳字段索引 / High-ready-timestamp field index.
+    pub const HIGH_READY_TIMESTAMP: usize = 31;
+    /// High Pending poll 数字段索引 / High-Pending-poll-count field index.
+    pub const HIGH_PENDING_POLLS: usize = 32;
+    /// 已释放 lease 数字段索引 / Released-lease-count field index.
+    pub const LEASE_RELEASED: usize = 33;
+    /// 已释放 Normal 数字段索引 / Released-Normal-count field index.
+    pub const NORMAL_RELEASED: usize = 34;
+    /// Executor spawned 数字段索引 / Executor-spawned-count field index.
+    pub const EXECUTOR_SPAWNED: usize = 35;
+    /// Executor completed 数字段索引 / Executor-completed-count field index.
+    pub const EXECUTOR_COMPLETED: usize = 36;
+    /// Ready stack 为空标记索引 / Ready-stack-empty marker index.
+    pub const READY_STACK_EMPTY: usize = 37;
+    /// Pool packet seen mask 字段索引 / Pool-packet-seen-mask field index.
+    pub const POOL_SEEN_MASK: usize = 38;
+    /// Pool packet seen-once mask 字段索引 / Pool-packet-seen-once-mask field index.
+    pub const POOL_SEEN_ONCE_MASK: usize = 39;
+
+    /// Wire task ID 字段索引 / Wire-task-ID field index.
+    pub const WIRE_TASK_ID: usize = 40;
+    /// Wire namespace 字段索引 / Wire-namespace field index.
+    pub const WIRE_NAMESPACE: usize = 41;
+    /// Wire local ID 字段索引 / Wire-local-ID field index.
+    pub const WIRE_LOCAL_ID: usize = 42;
+    /// Wire priority 字段索引 / Wire-priority field index.
+    pub const WIRE_PRIORITY: usize = 43;
+    /// GPU packet index 字段索引 / GPU-packet-index field index.
+    pub const GPU_PACKET_INDEX: usize = 44;
+    /// GPU shared-High provenance 字段索引 / GPU shared-High-provenance field index.
+    pub const GPU_SHARED_HIGH_RESERVED: usize = 45;
+    /// Echo nonce 字段索引 / Echo-nonce field index.
+    pub const ECHO_NONCE: usize = 46;
+    /// Echo task ID 字段索引 / Echo-task-ID field index.
+    pub const ECHO_TASK_ID: usize = 47;
+    /// Echo priority 字段索引 / Echo-priority field index.
+    pub const ECHO_PRIORITY: usize = 48;
+    /// Echo packet index 字段索引 / Echo-packet-index field index.
+    pub const ECHO_PACKET_INDEX: usize = 49;
+    /// Echo shared-High provenance 字段索引 / Echo shared-High-provenance field index.
+    pub const ECHO_SHARED_HIGH_RESERVED: usize = 50;
+    /// Host process sequence 字段索引 / Host-process-sequence field index.
+    pub const HOST_PROCESS_SEQUENCE: usize = 51;
+    /// Host process count 字段索引 / Host-process-count field index.
+    pub const HOST_PROCESS_COUNT: usize = 52;
+    /// Host error category 字段索引 / Host-error-category field index.
+    pub const HOST_ERROR: usize = 53;
+    /// Host event count 字段索引 / Host-event-count field index.
+    pub const HOST_EVENT_COUNT: usize = 54;
+    /// Host audit ready-empty 字段索引 / Host-audit-ready-empty field index.
+    pub const HOST_AUDIT_READY_EMPTY: usize = 55;
+    /// Host audit idle count 字段索引 / Host-audit-idle-count field index.
+    pub const HOST_AUDIT_IDLE_COUNT: usize = 56;
+    /// Host audit general mask 字段索引 / Host-audit-general-mask field index.
+    pub const HOST_AUDIT_GENERAL_MASK: usize = 57;
+    /// Host audit High mask 字段索引 / Host-audit-High-mask field index.
+    pub const HOST_AUDIT_HIGH_MASK: usize = 58;
+    /// Host audit duplicate count 字段索引 / Host-audit-duplicate-count field index.
+    pub const HOST_AUDIT_DUPLICATES: usize = 59;
+    /// Host audit missing count 字段索引 / Host-audit-missing-count field index.
+    pub const HOST_AUDIT_MISSING: usize = 60;
+    /// Persistent GPU clock sampled immediately before High admission.
+    pub const HIGH_INJECT_TIMESTAMP: usize = 61;
+    /// Raw observation marker that the async request's first poll returned Pending.
+    pub const MANDATORY_FIRST_PENDING: usize = 62;
+    /// Exact nonzero mutation whose designated hook reached its observation point.
+    pub const MUTATION_APPLIED: usize = 63;
+
+    /// 首次 join 成功标记索引 / First-join-success marker index.
+    pub const JOIN_SUCCESS: usize = 64;
+    /// 第二次 join AlreadyJoined 标记索引 / Second-join-AlreadyJoined marker index.
+    pub const SECOND_JOIN_ALREADY_JOINED: usize = 65;
+    /// Waiter local ID 字段索引 / Waiter-local-ID field index.
+    pub const WAITER_LOCAL_ID: usize = 66;
+    /// Executor final active 数字段索引 / Executor-final-active-count field index.
+    pub const EXECUTOR_ACTIVE_FINAL: usize = 67;
+    /// Low token consumed 标记索引 / Low-token-consumed marker index.
+    pub const LOW_TOKEN_CONSUMED: usize = 68;
+    /// High typed output 字段索引 / High-typed-output field index.
+    pub const HIGH_OUTPUT: usize = 69;
+    /// Mutation mode 字段索引 / Mutation-mode field index.
+    pub const MUTATION_MODE: usize = 70;
+    /// Kernel observation flags 字段索引 / Kernel-observation-flags field index.
+    pub const KERNEL_OBSERVATION_FLAGS: usize = 71;
+
+    /// Decision records 起始索引 / Decision-record base index.
+    pub const DECISION_BASE: usize = 72;
+    /// 每个 decision 的字数 / Words per decision record.
+    pub const DECISION_WORDS: usize = 10;
+    /// Decision record 数量 / Decision-record count.
+    pub const DECISION_COUNT: usize = 4;
+    /// Decision kind 相对索引 / Decision-kind relative index.
+    pub const DECISION_KIND: usize = 0;
+    /// Decision action 相对索引 / Decision-action relative index.
+    pub const DECISION_ACTION: usize = 1;
+    /// Use-GPU-result 相对索引 / Use-GPU-result relative index.
+    pub const DECISION_USE_GPU_RESULT: usize = 2;
+    /// Age source 相对索引 / Age-source relative index.
+    pub const DECISION_AGE_SOURCE: usize = 3;
+    /// Sample timestamp 相对索引 / Sample-timestamp relative index.
+    pub const DECISION_SAMPLE_TIMESTAMP: usize = 4;
+    /// Now timestamp 相对索引 / Now-timestamp relative index.
+    pub const DECISION_NOW_TIMESTAMP: usize = 5;
+    /// Age ticks 相对索引 / Age-ticks relative index.
+    pub const DECISION_AGE_TICKS: usize = 6;
+    /// Budget ticks 相对索引 / Budget-ticks relative index.
+    pub const DECISION_BUDGET_TICKS: usize = 7;
+    /// Hazard 标记相对索引 / Hazard-marker relative index.
+    pub const DECISION_HAZARD: usize = 8;
+    /// Reserved decision word 相对索引 / Reserved-decision-word relative index.
+    pub const DECISION_RESERVED: usize = 9;
+
+    /// Fresh-hazard decision ordinal / Fresh-hazard decision 序号。
+    pub const DECISION_FRESH_HAZARD: usize = 0;
+    /// Fresh-safe decision ordinal / Fresh-safe decision 序号。
+    pub const DECISION_FRESH_SAFE: usize = 1;
+    /// Stale decision ordinal / Stale decision 序号。
+    pub const DECISION_STALE: usize = 2;
+    /// Deadline decision ordinal / Deadline decision 序号。
+    pub const DECISION_DEADLINE: usize = 3;
+
+    /// 不制动 action / No-brake action.
+    pub const ACTION_NO_BRAKE: u64 = 0;
+    /// 使用 fresh GPU 结果制动 action / Apply-brake-from-fresh-result action.
+    pub const ACTION_APPLY_BRAKE_FROM_FRESH_RESULT: u64 = 1;
+    /// Watchdog 保守停止 action / Watchdog-conservative-stop action.
+    pub const ACTION_WATCHDOG_CONSERVATIVE_STOP: u64 = 2;
+    /// 真实 GPU 时钟 age source / Real-GPU-clock age source.
+    pub const AGE_SOURCE_REAL_GPU_CLOCK: u64 = 1;
+    /// 注入 stale age source / Injected-stale age source.
+    pub const AGE_SOURCE_INJECTED_STALE: u64 = 2;
+    /// 真实 first-poll latency age source / Real-first-poll-latency age source.
+    pub const AGE_SOURCE_REAL_FIRST_POLL_LATENCY: u64 = 3;
+
+    /// 计算 decision record 字段索引 / Compute a decision-record field index.
+    #[inline(always)]
+    pub const fn decision_word(decision: usize, field: usize) -> usize {
+        DECISION_BASE + decision * DECISION_WORDS + field
+    }
+}
+
+/// Named output schema for the timeout -> host reclaim -> same-packet reuse
+/// GPU gate. This is deliberately separate from the 112-word composed result.
+pub mod priority_echo_reuse_schema {
+    /// 输出字数 / Output word count.
+    pub const WORD_COUNT: usize = 16;
+    /// Schema 版本值 / Schema version value.
+    pub const VERSION_VALUE: u64 = 1;
+
+    /// Schema version 字段索引 / Schema-version field index.
+    pub const VERSION: usize = 0;
+    /// 第一次请求 nonce 字段索引 / First-request-nonce field index.
+    pub const FIRST_NONCE: usize = 1;
+    /// 第二次请求 nonce 字段索引 / Second-request-nonce field index.
+    pub const SECOND_NONCE: usize = 2;
+    /// 第一次 packet index 字段索引 / First-packet-index field index.
+    pub const FIRST_PACKET_INDEX: usize = 3;
+    /// 第一次 error category 字段索引 / First-error-category field index.
+    pub const FIRST_ERROR_CATEGORY: usize = 4;
+    /// Reacquire busy attempt 数字段索引 / Reacquire-busy-attempt-count field index.
+    pub const REACQUIRE_BUSY_ATTEMPTS: usize = 5;
+    /// 第二次 packet index 字段索引 / Second-packet-index field index.
+    pub const SECOND_PACKET_INDEX: usize = 6;
+    /// 第二次 echo nonce 字段索引 / Second-echo-nonce field index.
+    pub const SECOND_ECHO_NONCE: usize = 7;
+    /// 第二次 response packet index 字段索引 / Second-response-packet-index field index.
+    pub const SECOND_RESPONSE_PACKET_INDEX: usize = 8;
+    /// 第二次 Pending poll 数字段索引 / Second-Pending-poll-count field index.
+    pub const SECOND_PENDING_POLLS: usize = 9;
+    /// Stale write 标记索引 / Stale-write marker index.
+    pub const REUSE_STALE_WRITE: usize = 10;
+    /// 第二次完成标记索引 / Second-completion marker index.
+    pub const SECOND_COMPLETED: usize = 11;
+    /// General guard packet index 字段索引 / General-guard-packet-index field index.
+    pub const GENERAL_GUARD_PACKET_INDEX: usize = 12;
+    /// 保留字段 0 索引 / Reserved-field-zero index.
+    pub const RESERVED_0: usize = 13;
+    /// 保留字段 1 索引 / Reserved-field-one index.
+    pub const RESERVED_1: usize = 14;
+    /// Kernel error 字段索引 / Kernel-error field index.
+    pub const KERNEL_ERROR: usize = 15;
+}
+
 // ============================================================
 // TCP service constants
 // ============================================================
@@ -170,6 +475,139 @@ pub const CONTROL_ERROR: u32 = 2;
 /// Set by GPU after filling the packet, before pushing to ready stack.
 /// Host checks this bit before processing — skips if not set (stale re-visit).
 pub const CONTROL_FILLED: u32 = 4;
+/// Host has claimed a versioned request and exclusively owns its packet.
+pub const CONTROL_HOST_OWNED: u32 = 8;
+/// Device timeout won the cancellation race and transferred packet-release
+/// responsibility to the host.
+pub const CONTROL_CANCELLED: u32 = 16;
+/// Low control-word bits reserved for request state and response flags.
+pub const CONTROL_FLAGS_MASK: u32 = 0x1f;
+/// Number of low bits occupied by [`CONTROL_FLAGS_MASK`].
+pub const CONTROL_GENERATION_SHIFT: u32 = 5;
+/// Number of request-generation bits stored atomically in the control word.
+pub const CONTROL_GENERATION_BITS: u32 = 32 - CONTROL_GENERATION_SHIFT;
+/// Complete request-generation width: 27 atomic low bits plus 16 metadata bits.
+pub const REQUEST_GENERATION_BITS: u32 = CONTROL_GENERATION_BITS + 16;
+/// Mask for the full 43-bit request generation.
+pub const REQUEST_GENERATION_MASK: u64 = (1u64 << REQUEST_GENERATION_BITS) - 1;
+
+/// Return the state/response flags from a versioned control word.
+#[inline(always)]
+pub const fn control_flags(control: u32) -> u32 {
+    control & CONTROL_FLAGS_MASK
+}
+
+/// Encode a generation and state flags in the packet control word.
+#[inline(always)]
+pub const fn make_control(generation: u64, flags: u32) -> u32 {
+    (((generation & ((1u64 << CONTROL_GENERATION_BITS) - 1)) as u32) << CONTROL_GENERATION_SHIFT)
+        | (flags & CONTROL_FLAGS_MASK)
+}
+
+/// Decode the complete generation from a control word and metadata flags.
+#[inline(always)]
+pub const fn request_generation(control: u32, metadata_flags: u16) -> u64 {
+    ((metadata_flags as u64) << CONTROL_GENERATION_BITS)
+        | ((control >> CONTROL_GENERATION_SHIFT) as u64)
+}
+
+/// Return the metadata-flags portion of a complete request generation.
+#[inline(always)]
+pub const fn request_generation_metadata(generation: u64) -> u16 {
+    ((generation & REQUEST_GENERATION_MASK) >> CONTROL_GENERATION_BITS) as u16
+}
+
+/// Advance a request generation, reserving zero for freshly initialized and
+/// legacy packet slots.
+#[inline(always)]
+pub const fn next_request_generation(control: u32, metadata_flags: u16) -> u64 {
+    let next =
+        request_generation(control, metadata_flags).wrapping_add(1) & REQUEST_GENERATION_MASK;
+    if next == 0 {
+        1
+    } else {
+        next
+    }
+}
+
+// ============================================================
+// Hostcall priority and task metadata
+// ============================================================
+
+/// Scheduling priority carried end-to-end with a hostcall request.
+///
+/// The numeric order is part of the wire ABI. Consumers must decode values
+/// through [`Priority::from_raw`] instead of transmuting an arbitrary byte.
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Priority {
+    /// Best-effort work. It receives bounded service even under sustained load.
+    Low = 0,
+    /// Default priority used by all legacy APIs and packets.
+    #[default]
+    Normal = 1,
+    /// Latency-sensitive work with reserved packet capacity.
+    High = 2,
+}
+
+impl Priority {
+    /// Decode a wire value, falling back to [`Priority::Normal`] for unknown
+    /// values so a newer sender cannot accidentally gain elevated priority.
+    #[inline(always)]
+    pub const fn from_raw(value: u8) -> Self {
+        match value {
+            0 => Self::Low,
+            2 => Self::High,
+            _ => Self::Normal,
+        }
+    }
+
+    /// Return the stable one-byte wire representation.
+    #[inline(always)]
+    pub const fn as_raw(self) -> u8 {
+        self as u8
+    }
+}
+
+/// Task identity and effective priority associated with one hostcall.
+///
+/// `task_id == 0` means that the request is not associated with an executor
+/// task. Explicit trailing bytes make the C layout deterministic on both CPU
+/// and GPU targets.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct HostcallMetadata {
+    /// Executor task identifier, or zero when unavailable.
+    pub task_id: u64,
+    /// Priority after any runtime inheritance or aging adjustment.
+    pub effective_priority: Priority,
+    reserved: [u8; 7],
+}
+
+impl HostcallMetadata {
+    /// Construct metadata for an executor task.
+    #[inline(always)]
+    pub const fn new(task_id: u64, effective_priority: Priority) -> Self {
+        Self {
+            task_id,
+            effective_priority,
+            reserved: [0; 7],
+        }
+    }
+}
+
+/// 保留任务命名空间（高 32 位）并替换本地标识（低 32 位）。
+/// Preserve the task namespace (high 32 bits) while replacing its local ID.
+#[inline(always)]
+pub const fn replace_task_local_id(task_id: u64, local_id: u32) -> u64 {
+    (task_id & !(u32::MAX as u64)) | local_id as u64
+}
+
+impl Default for HostcallMetadata {
+    fn default() -> Self {
+        Self::new(0, Priority::Normal)
+    }
+}
 
 // ============================================================
 // Tagged pointer constants
@@ -217,6 +655,45 @@ pub const BUF_OFF_NUM_SHARDS: usize = 36;
 pub const BUF_OFF_PKTS_PER_SHARD: usize = 40;
 /// Offset of the shard array start offset (u32).
 pub const BUF_OFF_SHARD_ARRAY_OFF: usize = 44;
+/// Offset of the shared global priority-reserved free stack (u64, tagged pointer).
+///
+/// Version-zero buffers do not define this field and must ignore it.
+pub const BUF_OFF_HIGH_FREE_STACK: usize = 48;
+/// Offset of the hostcall protocol version (u32).
+pub const BUF_OFF_PROTOCOL_VERSION: usize = 56;
+/// Offset of the number each shard contributes to the shared High-only pool (u32).
+/// Legacy unsharded mode is treated as one shard.
+pub const BUF_OFF_HIGH_RESERVED_PER_SHARD: usize = 60;
+
+/// First buffer protocol version with task metadata and High-only capacity.
+pub const HOSTCALL_PRIORITY_PROTOCOL_VERSION: u32 = 2;
+/// First buffer protocol version with generation-tagged cancellation.
+pub const HOSTCALL_CANCELLATION_PROTOCOL_VERSION: u32 = 3;
+/// Current buffer protocol version.
+///
+/// Version 3 adds a generation-tagged cancellation/ownership state machine
+/// without changing any fixed header, packet, or payload size.
+pub const HOSTCALL_PROTOCOL_VERSION: u32 = HOSTCALL_CANCELLATION_PROTOCOL_VERSION;
+/// Priority-only metadata emitted by protocol-v2 device runtimes.
+pub const PACKET_METADATA_PRIORITY_VERSION: u8 = 1;
+/// Current packet metadata version. Version 2 opts into generation-tagged
+/// control states and host-side return of cancelled packets.
+pub const PACKET_METADATA_VERSION: u8 = 2;
+
+/// Whether a buffer version has the priority/reserved-capacity extension.
+/// Versions are matched explicitly because a future incompatible version must
+/// be negotiated rather than accidentally accepted by a bare `>=` check.
+#[inline(always)]
+pub const fn hostcall_supports_priority(version: u32) -> bool {
+    version == HOSTCALL_PRIORITY_PROTOCOL_VERSION
+        || version == HOSTCALL_CANCELLATION_PROTOCOL_VERSION
+}
+
+/// Whether a buffer version supports generation-tagged cancellation.
+#[inline(always)]
+pub const fn hostcall_supports_cancellation(version: u32) -> bool {
+    version == HOSTCALL_CANCELLATION_PROTOCOL_VERSION
+}
 
 // ============================================================
 // Per-block sharding layout
@@ -271,8 +748,95 @@ pub const PKT_OFF_ACTIVE_MASK: usize = 8;
 pub const PKT_OFF_SERVICE: usize = 12;
 /// Offset of the control flags field (u32).
 pub const PKT_OFF_CONTROL: usize = 16;
+/// Offset of the packet metadata version (u8).
+pub const PKT_OFF_METADATA_VERSION: usize = 20;
+/// Offset of the effective priority (u8; decode with [`Priority::from_raw`]).
+pub const PKT_OFF_PRIORITY: usize = 21;
+/// Offset of metadata flags (u16). Version-2 packets store the high 16 bits of
+/// their request generation here.
+pub const PKT_OFF_METADATA_FLAGS: usize = 22;
+/// Offset of the executor task identifier (u64).
+pub const PKT_OFF_TASK_ID: usize = 24;
 /// Offset of the payload region (32 lanes × 8 slots × 8 bytes).
 pub const PKT_OFF_PAYLOAD: usize = PACKET_HEADER_SIZE;
+
+// Wire ABI assertions. These intentionally fail compilation if a future edit
+// changes a shared type or moves metadata beyond the fixed-size headers.
+const _: [(); 1] = [(); core::mem::size_of::<Priority>()];
+const _: [(); 1] = [(); core::mem::align_of::<Priority>()];
+const _: [(); 16] = [(); core::mem::size_of::<HostcallMetadata>()];
+const _: [(); 8] = [(); core::mem::align_of::<HostcallMetadata>()];
+const _: [(); 0] = [(); core::mem::offset_of!(HostcallMetadata, task_id)];
+const _: [(); 8] = [(); core::mem::offset_of!(HostcallMetadata, effective_priority)];
+const _: [(); PACKET_HEADER_SIZE] = [(); PKT_OFF_TASK_ID + core::mem::size_of::<u64>()];
+const _: [(); BUFFER_HEADER_SIZE] =
+    [(); BUF_OFF_HIGH_RESERVED_PER_SHARD + core::mem::size_of::<u32>()];
+
+/// Return whether `index` belongs to the High-only packet reservation.
+///
+/// In sharded mode, the last `reserved_per_shard` indices of every shard are
+/// reserved and linked into one global High free stack. In legacy mode, the
+/// last `reserved_per_shard` indices of the whole pool are reserved.
+#[inline(always)]
+pub const fn is_high_reserved_packet(
+    index: u16,
+    num_packets: u16,
+    num_shards: u32,
+    pkts_per_shard: u32,
+    reserved_per_shard: u32,
+) -> bool {
+    if reserved_per_shard == 0 {
+        return false;
+    }
+    if num_shards == 0 {
+        let reserved = if reserved_per_shard > num_packets as u32 {
+            num_packets as u32
+        } else {
+            reserved_per_shard
+        };
+        return (index as u32) >= (num_packets as u32 - reserved);
+    }
+    if pkts_per_shard == 0 {
+        return false;
+    }
+    let reserved = if reserved_per_shard > pkts_per_shard {
+        pkts_per_shard
+    } else {
+        reserved_per_shard
+    };
+    let local_index = (index as u32) % pkts_per_shard;
+    local_index >= pkts_per_shard - reserved
+}
+
+/// Total credits in the one shared global High-only pool.
+///
+/// In sharded mode each shard contributes `reserved_per_shard` tail packets,
+/// but admission consumes them from a single global stack rather than from an
+/// isolated reserve belonging to the submitting shard.
+#[inline(always)]
+pub const fn shared_high_reserved_packets(
+    num_packets: u16,
+    num_shards: u32,
+    pkts_per_shard: u32,
+    reserved_per_shard: u32,
+) -> u32 {
+    if num_shards == 0 {
+        if reserved_per_shard > num_packets as u32 {
+            num_packets as u32
+        } else {
+            reserved_per_shard
+        }
+    } else if pkts_per_shard == 0 {
+        0
+    } else {
+        let contribution = if reserved_per_shard > pkts_per_shard {
+            pkts_per_shard
+        } else {
+            reserved_per_shard
+        };
+        contribution.saturating_mul(num_shards)
+    }
+}
 
 // ============================================================
 // Tagged pointer helpers
@@ -282,6 +846,14 @@ pub const PKT_OFF_PAYLOAD: usize = PACKET_HEADER_SIZE;
 //   Bits 63..32: ABA tag (monotonically increasing)
 //   Bits 31..16: reserved (zero)
 //   Bits 15..0:  packet index (0..N-1), or 0xFFFF = NULL
+
+/// Construct the next stack head for any push, pop, or whole-chain drain.
+/// Every successful head mutation advances the tag even when the new index was
+/// cached in an older packet `next` word.
+#[inline(always)]
+pub const fn advance_tagged_head(current: u64, new_index: u16) -> u64 {
+    make_tagged(tagged_tag(current).wrapping_add(1), new_index)
+}
 
 /// Extract the packet index from a tagged pointer.
 ///
@@ -530,6 +1102,12 @@ impl GpuError {
     #[inline(always)]
     pub const fn timeout() -> Self {
         Self::new(ERR_HOST_TIMEOUT, 0)
+    }
+
+    /// The connected hostcall buffer predates a required wire capability.
+    #[inline(always)]
+    pub const fn unsupported() -> Self {
+        Self::new(ERR_UNSUPPORTED, 0)
     }
 }
 
@@ -950,3 +1528,266 @@ pub const FR_MAX_MSG_LEN: usize = FR_SLOT_SIZE - FR_SLOT_OFF_MSG;
 
 /// Flag bit: kernel crashed (set by GPU before trap).
 pub const FR_FLAG_CRASHED: u32 = 1;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn priority_wire_values_and_fallback_are_stable() {
+        assert_eq!(Priority::Low.as_raw(), 0);
+        assert_eq!(Priority::Normal.as_raw(), 1);
+        assert_eq!(Priority::High.as_raw(), 2);
+        assert_eq!(Priority::from_raw(0), Priority::Low);
+        assert_eq!(Priority::from_raw(1), Priority::Normal);
+        assert_eq!(Priority::from_raw(2), Priority::High);
+        assert_eq!(Priority::from_raw(255), Priority::Normal);
+        assert_eq!(Priority::default(), Priority::Normal);
+    }
+
+    #[test]
+    fn hostcall_metadata_layout_is_fixed() {
+        assert_eq!(core::mem::size_of::<Priority>(), 1);
+        assert_eq!(core::mem::align_of::<Priority>(), 1);
+        assert_eq!(core::mem::size_of::<HostcallMetadata>(), 16);
+        assert_eq!(core::mem::align_of::<HostcallMetadata>(), 8);
+        assert_eq!(core::mem::offset_of!(HostcallMetadata, task_id), 0);
+        assert_eq!(
+            core::mem::offset_of!(HostcallMetadata, effective_priority),
+            8
+        );
+        assert_eq!(PKT_OFF_METADATA_VERSION, 20);
+        assert_eq!(PKT_OFF_PRIORITY, 21);
+        assert_eq!(PKT_OFF_METADATA_FLAGS, 22);
+        assert_eq!(PKT_OFF_TASK_ID, 24);
+        assert_eq!(
+            PKT_OFF_TASK_ID + core::mem::size_of::<u64>(),
+            PKT_OFF_PAYLOAD
+        );
+        assert_eq!(PACKET_HEADER_SIZE, 32);
+        assert_eq!(PACKET_SIZE, 2112);
+        assert_eq!(BUFFER_HEADER_SIZE, 64);
+    }
+
+    #[test]
+    fn versioned_control_generation_round_trips_without_layout_growth() {
+        assert_eq!(HOSTCALL_PRIORITY_PROTOCOL_VERSION, 2);
+        assert_eq!(HOSTCALL_CANCELLATION_PROTOCOL_VERSION, 3);
+        assert_eq!(HOSTCALL_PROTOCOL_VERSION, 3);
+        assert_eq!(PACKET_METADATA_PRIORITY_VERSION, 1);
+        assert_eq!(PACKET_METADATA_VERSION, 2);
+        assert!(hostcall_supports_priority(2));
+        assert!(hostcall_supports_priority(3));
+        assert!(!hostcall_supports_priority(4));
+        assert!(hostcall_supports_cancellation(3));
+        assert!(!hostcall_supports_cancellation(2));
+        assert!(!hostcall_supports_cancellation(4));
+
+        let generations = [1, 17, (1 << 27) - 1, 1 << 27, REQUEST_GENERATION_MASK];
+        for generation in generations {
+            let metadata = request_generation_metadata(generation);
+            let control = make_control(generation, CONTROL_HOST_OWNED);
+            assert_eq!(control_flags(control), CONTROL_HOST_OWNED);
+            assert_eq!(request_generation(control, metadata), generation);
+        }
+
+        let wrapped = next_request_generation(
+            make_control(REQUEST_GENERATION_MASK, 0),
+            request_generation_metadata(REQUEST_GENERATION_MASK),
+        );
+        assert_eq!(wrapped, 1);
+        assert_eq!(
+            make_control(9, CONTROL_READY | CONTROL_ERROR) & CONTROL_FLAGS_MASK,
+            3
+        );
+    }
+
+    #[test]
+    fn every_stack_head_mutation_advances_tag_and_blocks_short_aba() {
+        // T1 snapshots A(tag=7) -> B. T2 pops A and pushes A again before
+        // T1's CAS. The index returns to A, but the tag advances twice.
+        let t1_old = make_tagged(7, 4);
+        let cached_next = make_tagged(2, 9);
+        let after_t2_pop = advance_tagged_head(t1_old, tagged_index(cached_next));
+        let after_t2_push = advance_tagged_head(after_t2_pop, 4);
+
+        assert_eq!(tagged_index(after_t2_push), tagged_index(t1_old));
+        assert_ne!(after_t2_push, t1_old);
+        assert_eq!(tagged_tag(after_t2_pop), 8);
+        assert_eq!(tagged_tag(after_t2_push), 9);
+
+        let t1_pop_target = advance_tagged_head(t1_old, tagged_index(cached_next));
+        assert_ne!(after_t2_push, t1_pop_target);
+    }
+
+    #[test]
+    fn metadata_constructor_round_trips_values() {
+        let metadata = HostcallMetadata::new(0x0123_4567_89ab_cdef, Priority::High);
+        assert_eq!(metadata.task_id, 0x0123_4567_89ab_cdef);
+        assert_eq!(metadata.effective_priority, Priority::High);
+
+        let legacy = HostcallMetadata::default();
+        assert_eq!(legacy.task_id, 0);
+        assert_eq!(legacy.effective_priority, Priority::Normal);
+    }
+
+    #[test]
+    fn replacing_task_local_id_preserves_namespace() {
+        let task_id = (0x0B57_A11Eu64 << 32) | 241;
+        let corrupted = replace_task_local_id(task_id, 0);
+
+        assert_eq!(corrupted, 0x0B57_A11Eu64 << 32);
+        assert_eq!(corrupted >> 32, 0x0B57_A11E);
+        assert_eq!(corrupted as u32, 0);
+    }
+
+    #[test]
+    fn high_reservation_covers_each_shard_tail() {
+        for index in 0..12u16 {
+            let expected = matches!(index, 3 | 7 | 11);
+            assert_eq!(
+                is_high_reserved_packet(index, 12, 3, 4, 1),
+                expected,
+                "index {index}"
+            );
+        }
+        assert!(is_high_reserved_packet(7, 8, 0, 0, 1));
+        assert!(!is_high_reserved_packet(6, 8, 0, 0, 1));
+        assert!(!is_high_reserved_packet(7, 8, 0, 0, 0));
+        assert_eq!(shared_high_reserved_packets(12, 3, 4, 1), 3);
+        assert_eq!(shared_high_reserved_packets(8, 0, 0, 2), 2);
+    }
+
+    #[test]
+    fn composed_priority_schema_is_exact_and_non_overlapping() {
+        use composed_priority_schema as schema;
+
+        assert_eq!(SERVICE_PRIORITY_ECHO, 24);
+        assert_eq!(priority_echo::SLOTS, 8);
+        assert_eq!(schema::VERSION_VALUE, 3);
+        let fields = [
+            schema::VERSION,
+            schema::WORDS,
+            schema::PHASE,
+            schema::NONCE,
+            schema::NAMESPACE,
+            schema::EXPECTED_HIGH_LOCAL_ID,
+            schema::PACKET_COUNT,
+            schema::GENERAL_PACKET_COUNT,
+            schema::HIGH_RESERVED_COUNT,
+            schema::HARD_LOW_LIMIT,
+            schema::HARD_NORMAL_BACKLOG,
+            schema::HIGH_FIRST_POLL_GAP_MAX,
+            schema::FRESHNESS_BUDGET_TICKS,
+            schema::DEADLINE_BUDGET_TICKS,
+            schema::EXPECTED_END_MAGIC,
+            schema::END_MAGIC,
+            schema::LOW_ADMITTED,
+            schema::RESERVED_CAPACITY_REJECTIONS,
+            schema::LEASE_ACQUIRED,
+            schema::LEASE_MASK,
+            schema::NORMAL_ALIVE,
+            schema::GENERAL_POOL_EXHAUSTED,
+            schema::DISPATCH_SEQUENCE,
+            schema::HIGH_INJECT_SEQUENCE,
+            schema::HIGH_FIRST_POLL_SEQUENCE,
+            schema::HIGH_SUBMIT_SEQUENCE,
+            schema::HIGH_READY_SEQUENCE,
+            schema::LOW_WAIT_START_SEQUENCE,
+            schema::LOW_JOIN_SEQUENCE,
+            schema::LOW_SECOND_JOIN_SEQUENCE,
+            schema::HIGH_FIRST_POLL_TIMESTAMP,
+            schema::HIGH_READY_TIMESTAMP,
+            schema::HIGH_PENDING_POLLS,
+            schema::LEASE_RELEASED,
+            schema::NORMAL_RELEASED,
+            schema::EXECUTOR_SPAWNED,
+            schema::EXECUTOR_COMPLETED,
+            schema::READY_STACK_EMPTY,
+            schema::POOL_SEEN_MASK,
+            schema::POOL_SEEN_ONCE_MASK,
+            schema::WIRE_TASK_ID,
+            schema::WIRE_NAMESPACE,
+            schema::WIRE_LOCAL_ID,
+            schema::WIRE_PRIORITY,
+            schema::GPU_PACKET_INDEX,
+            schema::GPU_SHARED_HIGH_RESERVED,
+            schema::ECHO_NONCE,
+            schema::ECHO_TASK_ID,
+            schema::ECHO_PRIORITY,
+            schema::ECHO_PACKET_INDEX,
+            schema::ECHO_SHARED_HIGH_RESERVED,
+            schema::HOST_PROCESS_SEQUENCE,
+            schema::HOST_PROCESS_COUNT,
+            schema::HOST_ERROR,
+            schema::HOST_EVENT_COUNT,
+            schema::HOST_AUDIT_READY_EMPTY,
+            schema::HOST_AUDIT_IDLE_COUNT,
+            schema::HOST_AUDIT_GENERAL_MASK,
+            schema::HOST_AUDIT_HIGH_MASK,
+            schema::HOST_AUDIT_DUPLICATES,
+            schema::HOST_AUDIT_MISSING,
+            schema::HIGH_INJECT_TIMESTAMP,
+            schema::MANDATORY_FIRST_PENDING,
+            schema::MUTATION_APPLIED,
+            schema::JOIN_SUCCESS,
+            schema::SECOND_JOIN_ALREADY_JOINED,
+            schema::WAITER_LOCAL_ID,
+            schema::EXECUTOR_ACTIVE_FINAL,
+            schema::LOW_TOKEN_CONSUMED,
+            schema::HIGH_OUTPUT,
+            schema::MUTATION_MODE,
+            schema::KERNEL_OBSERVATION_FLAGS,
+        ];
+        for (expected, actual) in fields.into_iter().enumerate() {
+            assert_eq!(actual, expected);
+        }
+        assert_eq!(fields.len(), schema::DECISION_BASE);
+        for decision in 0..schema::DECISION_COUNT {
+            for field in 0..schema::DECISION_WORDS {
+                assert_eq!(
+                    schema::decision_word(decision, field),
+                    schema::DECISION_BASE + decision * schema::DECISION_WORDS + field,
+                );
+            }
+        }
+        assert_eq!(
+            schema::DECISION_BASE + schema::DECISION_COUNT * schema::DECISION_WORDS,
+            schema::WORD_COUNT,
+        );
+        assert_eq!(schema::LOW_LIMIT_VALUE, 224);
+        assert_eq!(schema::NORMAL_BACKLOG_VALUE, 16);
+        assert_ne!(schema::NAMESPACE_VALUE, 0);
+        assert_eq!(schema::COORDINATOR_LOCAL_ID_VALUE, 224);
+        assert_eq!(schema::EXPECTED_HIGH_LOCAL_ID_VALUE, 241);
+    }
+
+    #[test]
+    fn priority_echo_reuse_schema_covers_every_word() {
+        use priority_echo_reuse_schema as reuse;
+
+        let fields = [
+            reuse::VERSION,
+            reuse::FIRST_NONCE,
+            reuse::SECOND_NONCE,
+            reuse::FIRST_PACKET_INDEX,
+            reuse::FIRST_ERROR_CATEGORY,
+            reuse::REACQUIRE_BUSY_ATTEMPTS,
+            reuse::SECOND_PACKET_INDEX,
+            reuse::SECOND_ECHO_NONCE,
+            reuse::SECOND_RESPONSE_PACKET_INDEX,
+            reuse::SECOND_PENDING_POLLS,
+            reuse::REUSE_STALE_WRITE,
+            reuse::SECOND_COMPLETED,
+            reuse::GENERAL_GUARD_PACKET_INDEX,
+            reuse::RESERVED_0,
+            reuse::RESERVED_1,
+            reuse::KERNEL_ERROR,
+        ];
+        for (expected, actual) in fields.into_iter().enumerate() {
+            assert_eq!(actual, expected);
+        }
+        assert_eq!(fields.len(), reuse::WORD_COUNT);
+        assert_eq!(reuse::VERSION_VALUE, 1);
+    }
+}

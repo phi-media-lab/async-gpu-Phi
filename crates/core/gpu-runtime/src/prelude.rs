@@ -51,7 +51,14 @@ pub use crate::std_future::{
 pub use crate::sync::{Mutex, MutexGuard};
 
 // --- Executor ---
-pub use crate::executor::{ExecutorError, ExecutorStats, GpuExecutor, TaskId};
+pub use crate::executor::{
+    ExecutorError, ExecutorStats, GpuExecutor, Priority, PriorityUpdate, TaskId, TaskKey,
+    TaskKeyError, TaskOptions, HIGH_PRIORITY_RESERVED_SLOTS, NORMAL_PRIORITY_RESERVED_SLOTS,
+};
+pub use crate::priority::{
+    CompletionCell, MayWaitFor, PriorityClass, PriorityLevel, PriorityToken, TaskContext,
+    TaskContextError, TaskMetadata, TypedJoinError, TypedJoinHandle, TypedWait,
+};
 
 // --- Collections ---
 pub use crate::collections::GpuHashMap;
